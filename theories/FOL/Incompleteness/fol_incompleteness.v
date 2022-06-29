@@ -68,7 +68,7 @@ Section fol.
   (** ** Weak representability from DPRM *)
   Section Q_weakly_represents.
     Existing Instance intu.
-    Hypothesis mu_universal : mu_is_universal.
+    Hypothesis mu_universal : is_universal theta_mu.
 
     Variable P : nat -> Prop.
     Hypothesis Penum : enumerable P. 
@@ -140,7 +140,7 @@ Section fol.
 
   (* Q is essentially incomplete and essentially undecidable *)
   Section Q_incomplete.
-    Hypothesis mu_universal : mu_is_universal.
+    Hypothesis mu_universal : is_universal theta_mu.
 
     Hypothesis (p : peirce).
     Existing Instance intu.
@@ -153,7 +153,7 @@ Section fol.
     Theorem Q_undecidable : ~decidable (@tprv _ _ _ p T).
     Proof.
       assert (exists f : nat -> nat -\ bool, is_universal f) as [theta theta_universal].
-      { apply epf_nat_bool, EPFmu, mu_universal. }
+      { apply epf_nat_bool. now exists theta_mu. }
       destruct (@Q_weak_repr mu_universal (fun c => theta c c ▷ true) (theta_self_return_enumerable theta true)) as (φ1 & Hb1 & HΣ1 & Hφ1).
       destruct (@Q_weak_repr mu_universal (fun c => theta c c ▷ false) (theta_self_return_enumerable theta false)) as (φ2 & Hb2 & HΣ2 & Hφ2).
       assert (forall c, theta c c ▷ true -> theta c c ▷ false -> False) as Hdisj.
@@ -171,7 +171,7 @@ Section fol.
     Theorem Q_incomplete : exists φ, bounded 0 φ /\ Σ1 φ /\ ~@tprv _ _ _ p T φ /\ ~@tprv _ _ _ p T (¬φ).
     Proof. 
       assert (exists f : nat -> nat -\ bool, is_universal f) as [theta theta_universal].
-      { apply epf_nat_bool, EPFmu, mu_universal. }
+      { apply epf_nat_bool. now exists theta_mu. }
 
       destruct (@Q_weak_repr mu_universal (fun c => theta c c ▷ true) (theta_self_return_enumerable theta true)) as (φ1 & Hb1 & HΣ1 & Hφ1).
       destruct (@Q_weak_repr mu_universal (fun c => theta c c ▷ false) (theta_self_return_enumerable theta false)) as (φ2 & Hb2 & HΣ2 & Hφ2).

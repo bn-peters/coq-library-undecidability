@@ -252,5 +252,10 @@ Section Enumerate.
   Proof.
     apply enum_enumT. exists (L_recalg n). apply enum_recalg.
   Qed.
-
+  Lemma enumeratorT_recalg n :
+    {f & enumerator__T f (recalg n) }.
+  Proof.
+    eexists. eapply enumerator__T_to_list.
+    apply enum_recalg.
+  Defined.
 End Enumerate.

@@ -12,6 +12,9 @@ Local Unset Strict Implicit.
 Definition is_universal {Y : Type} (theta : nat -> nat -\ Y) :=
   forall f : nat -\ Y, exists c, forall x y, f x ▷ y <-> theta c x ▷ y.
 
+Definition EPF_B := exists (theta : nat -> nat -\ bool), is_universal theta.
+Definition EPF_N := exists (theta : nat -> nat -\ nat), is_universal theta.
+
 Section epf.
   Variable (theta : nat -> nat -\ bool).
   Hypothesis theta_universal : is_universal theta.
@@ -125,7 +128,7 @@ Section epf_nat_bool.
     - exists (fun _ => None). congruence.
   Defined.
   (* EPF_N implies EPF_B *)
-  Lemma epf_nat_bool : (exists theta : nat -> nat -\ nat, is_universal theta) -> (exists theta : nat -> nat -\ bool, is_universal theta).
+  Lemma epf_nat_bool : EPF_N -> EPF_B.
   Proof.
     intros [theta theta_universal].
     unshelve eexists.

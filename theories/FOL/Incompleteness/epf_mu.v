@@ -24,28 +24,26 @@ Definition mu_semi_decidable (P : nat -> Prop) :=
 
 (* Construct an embedding nat -> recalg 1 *)
 Section recalg_enum.
-  Variable f : nat -> option (recalg 1).
-  Hypothesis f_enum : enumerator__T f (recalg 1).
-
-  Local Definition nat_recalg : nat -> option (recalg 1) := f.
-  Local Definition recalg_nat : recalg 1 -> nat.
-  Proof using f_enum.
-    intros c. destruct (constructive_indefinite_ground_description_nat_Acc (fun n => f n = Some c)) as [y _].
-    - intros n. decide equality. apply recalg_dec.
-    - apply f_enum.
+  Definition nat_recalg' : nat -> option (recalg 1) := projT1 (enumeratorT_recalg 1).
+  Definition nat_recalg : nat -> recalg 1.
+  Proof.
+    intros c. destruct (nat_recalg' c).
+    - exact r.
+    - exact ra_zero.
+  Defined.
+  Definition recalg_nat : recalg 1 -> nat.
+  Proof.
+    intros c. destruct (constructive_indefinite_ground_description_nat_Acc (fun n => nat_recalg n = c)) as [y _].
+    - intros n. apply recalg_dec.
+    - destruct (projT2 (enumeratorT_recalg 1) c) as [x H]. 
+      exists x. unfold nat_recalg, nat_recalg'. now rewrite H.
     - exact y.
   Defined.
-  Local Lemma nat_recalg_nat r : nat_recalg (recalg_nat r) = Some r.
+  Lemma nat_recalg_nat r : nat_recalg (recalg_nat r) = r.
   Proof. 
     unfold nat_recalg, recalg_nat. now destruct constructive_indefinite_ground_description_nat_Acc.
   Qed.
-
 End recalg_enum.
-Lemma recalg_invert : exists (f : recalg 1 -> nat) (g : nat -> option (recalg 1)), forall r, g (f r) = Some r.
-Proof.
-  destruct (enumT_recalg 1) as [enum Henum].
-  do 2 eexists. apply nat_recalg_nat.
-Qed.
 
 
 Lemma erase_ra_rel alg x y :
@@ -62,7 +60,6 @@ Proof.
     unfold evalfun. now destruct eval as [[]|].
 Qed.
 
-Import ListNotations.
 (* Step indexed execution of mu recursive algorithms *)
 Definition mu_step : recalg 1 -> nat -\ nat.
 Proof.
@@ -74,12 +71,11 @@ Proof.
   - apply erase_ra_rel. exists k1. eassumption.
   - apply erase_ra_rel. exists k2. eassumption.
 Defined.
-
+Definition theta_mu : nat -> nat -\ nat := fun c => mu_step (nat_recalg c).
 (** ** Church's thesis for mu-recursive functions *)
 
-Definition mu_is_universal := forall f, exists c, forall x y, f x ▷ y <-> mu_step c x ▷ y.
 Section mu.
-  Hypothesis mu_universal : mu_is_universal.
+  Hypothesis mu_universal : is_universal theta_mu.
 
   (* Mu semi-decidability implies synthetic enumerability assuming EPFmu *)
   Lemma mu_semi_decidable_enumerable (P : nat -> Prop) :
@@ -95,7 +91,7 @@ Section mu.
       intros y1 y2 k1 k2 H1 H2.
       destruct (f x k1) eqn:Hf1, (f x k2) eqn:Hf2; congruence. }
     cbn in Hc.
-    exists c. intros x. rewrite Hf. split.
+    exists (nat_recalg c). intros x. rewrite Hf. split.
     - intros [k Hk]. exists 0.
       apply erase_ra_rel.
       destruct (Hc x 0) as [[k' Hk'] _].
@@ -106,19 +102,6 @@ Section mu.
       apply erase_ra_rel, Hc in Hk as [k' Hk'].
       exists k'. now destruct f.
   Qed.
-
-  (* EPFmu implies EPF_N *)
-  Lemma EPFmu : exists f : nat -> nat -\ nat, is_universal f.
-  Proof using mu_universal.
-    destruct recalg_invert as (f & g & H). 
-    unshelve eexists.
-    { intros c. destruct (g c).
-      - apply (mu_step r).
-      - intros x. exists (fun _ => None). congruence. }
-    intros h. destruct (mu_universal h) as [r Hr].
-    exists (f r). now rewrite H.
-  Qed.
-
 End mu.
 
 
