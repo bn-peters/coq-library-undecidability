@@ -15,8 +15,7 @@ Local Unset Strict Implicit.
 
 Record FS (S : Type) (neg : S -> S) : Type := 
   mkFS { fprv : S -> Prop
-       ; S_discrete : discrete S
-       ; P_enumerable : enumerable fprv
+       ; P_semi_decidable : semi_decidable fprv
        ; consistent : forall s, fprv s -> fprv (neg s) -> False }.
 Arguments FS : clear implicits.
 
@@ -42,20 +41,17 @@ Section facts.
     (forall x, P1 x -> fs ⊢F r x) /\
     (forall x, P2 x -> fs ⊢F neg (r x)).
 
+  Lemma semi_decidable_red (X Y : Type) (p : X -> Prop) (q : Y -> Prop) :
+    p ⪯ q -> semi_decidable q -> semi_decidable p.
+  Proof.
+    intros [f Hf] [g Hg]. exists (fun x n => g (f x) n).
+    firstorder.
+  Qed.
   (* Refutability is semi decidable *)
   Lemma refutable_semi_decidable : semi_decidable (fun s => fs ⊢F neg s).
   Proof.
-    destruct fs.(P_enumerable) as [prov Hprov].
-    pose proof fs.(S_discrete) as [S_eqdec]%discrete_iff.
-
-    unshelve eexists.
-    { intros s k. refine (match prov k with 
-                          | Some s' => if S_eqdec (neg s) s' then true else false
-                          | None => false end). }
-    intros s. unfold enumerator in Hprov. rewrite Hprov.
-    apply utils_tac.exists_equiv. intros n.
-    destruct (prov n); last easy.
-    destruct S_eqdec; firstorder congruence.
+    eapply semi_decidable_red. 2: apply fs.(P_semi_decidable).
+    exists neg. firstorder.
   Qed.
 
   (* There is a function agreeing with provability *)
@@ -65,9 +61,7 @@ Section facts.
   Proof.
     apply enumerable_separable.
     - apply fs.(consistent).
-    - apply enumerable_semi_decidable.
-      + apply fs.(S_discrete).
-      + apply fs.(P_enumerable).
+    - apply fs.(P_semi_decidable). 
     - apply refutable_semi_decidable.
   Qed.
   

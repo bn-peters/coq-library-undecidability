@@ -38,11 +38,12 @@ Section fol_fs.
   Definition fol_fs (T : theory) (Tenum : enumerable T) (Tconsis : ~T ⊢T ⊥) : FS form (fun φ => ¬φ).
   Proof.
     apply mkFS with (fprv := fun φ => T ⊢T φ).
-    - apply form_discrete.
-    - unshelve eapply tprv_enumerable.
-      + apply enumerable_PA_funcs.
-      + exists (fun _ => Some Eq). intros []. now exists 0.
-      + assumption.
+    - apply enumerable_semi_decidable.
+      + apply form_discrete.
+      + unshelve eapply tprv_enumerable.
+        * apply enumerable_PA_funcs.
+        * exists (fun _ => Some Eq). intros []. now exists 0.
+        * assumption.
     - intros φ [T1 [HT1 H1]] [T2 [HT2 H2]]. apply Tconsis. exists (T1 ++ T2). split.
       + intros ψ [?|?]%in_app_or; auto.
       + fapply H2. fapply H1.
