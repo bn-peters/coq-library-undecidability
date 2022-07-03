@@ -28,6 +28,10 @@ Proof.
   + now exists 2.
   + now exists 3.
 Qed.
+Lemma enumerable_PA_preds : enumerable__T PA_preds.
+Proof.
+  exists (fun _ => Some Eq). intros []. now exists 0.
+Qed.
 
 (* first-order logic with an enumerable theory is a formal system *)
 Section fol_fs.
@@ -42,7 +46,7 @@ Section fol_fs.
       + apply form_discrete.
       + unshelve eapply tprv_enumerable.
         * apply enumerable_PA_funcs.
-        * exists (fun _ => Some Eq). intros []. now exists 0.
+        * apply enumerable_PA_preds.
         * assumption.
     - intros φ [T1 [HT1 H1]] [T2 [HT2 H2]]. apply Tconsis. exists (T1 ++ T2). split.
       + intros ψ [?|?]%in_app_or; auto.

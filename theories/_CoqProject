@@ -286,6 +286,7 @@ FOL/Incompleteness/qdec.v
 FOL/Incompleteness/weak_strong.v
 FOL/Incompleteness/completeness.v
 FOL/Incompleteness/fol_incompleteness.v
+FOL/Incompleteness/ctq.v
 
 FOL/Proofmode/ProofMode.v
 FOL/Proofmode/StringToIdent.v

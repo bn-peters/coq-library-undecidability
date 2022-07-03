@@ -78,6 +78,10 @@ Theorem totalise X Y (f : X -\ Y) : (forall x, exists y, f x ▷ y) -> forall x,
 Proof.
   intros H x. apply totalise_part, H.
 Qed.
+Definition partialise X Y (f : X -> Y) : X -\ Y.
+Proof.
+  intros x. exists (fun _ => Some (f x)). congruence.
+Defined.
 
 (* Utilities for working with partial functions *)
 Lemma part_functional {X : Type} (p : part X) (x y : X) : p ▷ x -> p ▷ y -> x = y.
