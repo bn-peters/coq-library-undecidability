@@ -184,11 +184,13 @@ Section completeness.
   Lemma Qdec_absoluteness M1 M2 (I1 : interp M1) (I2 : interp M2) (QM1 : I1 ⊨=L Qeq) (Mext1 : extensional I1) (QM2 : I2 ⊨=L Qeq) (Mext2 : extensional I2) ρ1 ρ2 φ :
     bounded 0 φ -> Qdec φ -> I1; ρ1 ⊨ φ -> I2; ρ2 ⊨ φ.
   Proof.
-    intros Hb HQ H1. destruct (HQ var) as [H|H].
-    { eapply subst_bound; last eassumption. lia. }
+    intros Hb HQ H1. destruct (HQ (fun _ => zero)) as [H|H].
+    { solve_bounds. }
     all: rewrite completeness in H.
-    - rewrite <-subst_var. now apply H.
-    - contradict H1. pattern φ. rewrite <-subst_var. now apply H.
+    - rewrite bounded_0_subst in H; auto.
+    - contradict H1. pattern φ. cbn in H. unfold not. rewrite bounded_0_subst in H.
+      + cbn. unfold not. now apply H.
+      + assumption.
   Qed.
 
   Lemma Qdec_absoluteness_nat M (I : interp M) (QM : I ⊨=L Qeq) (Mext : extensional I) ρN ρM φ :

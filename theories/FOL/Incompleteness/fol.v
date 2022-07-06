@@ -217,6 +217,11 @@ Section syntax.
     - apply up_invert_bound_t. apply H3. left.
   Qed.
 
+  Lemma bounded_0_subst φ ρ : bounded 0 φ -> φ[ρ] = φ.
+  Proof.
+    intros H. setoid_rewrite <-subst_var at 3. eapply bounded_subst; first eassumption. lia.
+  Qed.
+
 
 
   (* The definitions are opaque to avoid automatic unfolding when simplifying substitutions *)

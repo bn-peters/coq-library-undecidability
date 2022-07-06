@@ -155,7 +155,7 @@ Section ctq_repr.
       2: { rewrite subst_comp. eapply subst_bound; last eassumption.
         intros [|[|n]] ?; cbn.
         - constructor. lia.
-        - repeat (solve_bounds; rewrite num_subst). apply num_bound. 
+        - repeat (solve_bounds; rewrite ?num_subst); apply num_bound. 
         - lia. }
       exists k.
       enough (f' k = S x) as H.
@@ -198,8 +198,8 @@ Section ctq_repr.
       fspecialize (H (num 1)).
       replace (φ[_][_]) with (φ[num x .: $0..][(num 1)..]).
       { fstart. fintros "H". fapply H in "H". 
-        clear Hφ. clear H.
-        (* NOTE these two tactics can take a few many seconds to execute *)
+        (* For some reason, these assumption cause fapply to take a long time *)
+        clear H Hx x Hφ HΣ Hb φ Hf f HQ HP Hdisj P Q ctq.
         fapply (ax_zero_succ zero). fapply ax_sym.
         ctx. }
       rewrite !subst_comp. eapply bounded_subst; first eassumption.
