@@ -36,6 +36,7 @@ Section FixSignature.
 
 
 
+  (** *** Definition 6 : reductions to axiomatisations combine Tarski semantics and intuitionistic ND *)
 
   Definition treduction X (f : X -> form) (P : X -> Prop) T :=
     reduction f P (tvalid T) /\ reduction f P (tprv_intu T).
