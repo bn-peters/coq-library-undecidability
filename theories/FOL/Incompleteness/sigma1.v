@@ -64,7 +64,7 @@ Section Sigma1.
     intros HQ Hb.
     exists (∃ ($0 ⧀= $1) ∧ ∃ ($0 ⧀=comm $2) ∧ φ[up (up (S >> var))]).
     repeat split.
-    { apply (@Qdec_bounded_exists _ 0), (@Qdec_bounded_exists_comm _ 1).
+    { apply (@Qdec_bounded_exists _ $0), (@Qdec_bounded_exists_comm _ $1).
       apply Qdec_subst, HQ. }
     { constructor. constructor.
       { rewrite pless_eq. 

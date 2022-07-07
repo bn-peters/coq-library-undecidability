@@ -110,7 +110,7 @@ Section value_disjoint.
     Lemma φ1'_qdec : Qdec φ1'.
     Proof.
       apply Qdec_and; first assumption.
-      apply (@Qdec_bounded_forall _ 1).
+      apply (@Qdec_bounded_forall _ $1).
       apply Qdec_impl.
       - apply Qdec_subst, φ2_qdec.
       - apply Qdec_bot.
@@ -119,7 +119,7 @@ Section value_disjoint.
     Lemma φ2'_qdec : Qdec φ2'.
     Proof.
       apply Qdec_and; first assumption.
-      apply (@Qdec_bounded_forall _ 1).
+      apply (@Qdec_bounded_forall _ $1).
       apply Qdec_impl.
       - apply Qdec_subst, φ1_qdec.
       - apply Qdec_bot.
