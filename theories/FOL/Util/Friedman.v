@@ -432,4 +432,18 @@ Section Arithmetic.
 End Arithmetic.
 
 
-
+Lemma std_Q_consistent :
+  ~ list_theory Qeq ⊢TC ⊥.
+Proof.
+  apply std_T_consistent.
+  intros Γ P H rho psi psi_Γ.
+  induction Γ as [|a Γ].
+  1: destruct psi_Γ.
+  destruct (psi_Γ) as [<-|].
+  2: apply IHΓ; auto.
+  assert ((list_theory Qeq) a) as Qa by auto.
+  repeat (destruct Qa as [<-|Qa]).
+  all: cbn -[FAeq]; try refine (fun A => let F := A _ rho in _); intuition.
+  - destruct d; eauto.
+  - destruct Qa.
+Qed.

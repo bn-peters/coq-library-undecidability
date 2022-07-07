@@ -12,7 +12,7 @@ From Undecidability.H10 Require Import DPRM.
 Require Import Undecidability.Synthetic.EnumerabilityFacts.
 From Coq.Logic Require Import ConstructiveEpsilon.
 Require Import Equations.Equations.
-From Undecidability.FOL.Incompleteness Require Import utils epf recalg fol qdec.
+From Undecidability.FOL.Incompleteness Require Import utils epf recalg fol qdec sigma1.
 
 Import ListNotations.
 

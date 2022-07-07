@@ -4,7 +4,7 @@ From Undecidability.Shared Require Import Dec embed_nat.
 From Undecidability.FOL.Util Require Import Syntax_facts FullDeduction FullDeduction_facts FullTarski FullTarski_facts Axiomatisations FA_facts Syntax.
 From Undecidability.FOL Require Import PA.
 From Undecidability.FOL.Proofmode Require Import Theories ProofMode Hoas.
-From Undecidability.FOL.Incompleteness Require Import formal_systems fol qdec.
+From Undecidability.FOL.Incompleteness Require Import formal_systems fol qdec sigma1.
 
 
 (** * Weak representability implies strong separability using Rosser's trick *)
