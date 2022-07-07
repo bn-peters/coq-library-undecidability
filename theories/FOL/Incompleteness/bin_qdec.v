@@ -25,6 +25,13 @@ Section bin_qdec.
 
   Existing Instance intu.
 
+  Lemma Q_add_assoc1 x y z t : Qeq ⊢ num t == (x ⊕ y) ⊕ z ~> num t == x ⊕ (y ⊕ z).
+  Proof. Admitted.
+  Lemma Q_add_assoc2 x y z t : Qeq ⊢ num t == (x ⊕ y) ⊕ z ~> num t == y ⊕ (x ⊕ z).
+  Proof. Admitted.
+
+
+
   Lemma bin_bounded_forall_iff t φ : bounded_t 0 t -> 
     Qeq ⊢ (∀∀ ($1 ⊕ $0 ⧀= t) ~> φ) <~>
           (∀ ($0 ⧀= t) ~> ∀ ($0 ⧀= $1) ~> ∀ ($0 ⧀= $2) ~> ($1 ⊕ $0 ⧀= t) ~> φ[up (up ↑)]).
@@ -41,21 +48,32 @@ Section bin_qdec.
         intros [|[|n]]; reflexivity. }
       fapply "H". fexists xy'. rewrite !(bounded_t_0_subst _ Hb). fapply "Hxy'".
     - fintros "H" x y. fintros "[z Hz]".
+      fassert (t == num t') by fapply Ht'.
       fspecialize ("H" t).
       fdestruct "H".
-      { rewrite !(bounded_t_0_subst _ Hb).
-        fassert (t == num t') by fapply Ht'. frewrite "H".
-        fexists zero. admit. }
+      { fexists zero. rewrite !(bounded_t_0_subst _ Hb).
+         frewrite "H0".
+        frewrite add_zero_num. fapply ax_refl. }
       fdestruct ("H" x).
-      { fexists (y ⊕ z). admit. }
+      { fexists (y ⊕ z). 
+        frewrite Ht'. fapply Q_add_assoc1.
+        rewrite !(bounded_t_0_subst _ Hb).
+        feapply ax_trans.
+        - feapply ax_sym. fapply "H0".
+        - fapply "Hz".  }
       fdestruct ("H" y).
-      { fexists (x ⊕ z). admit. }
+      { fexists (x ⊕ z). 
+        frewrite Ht'. fapply Q_add_assoc2.
+        rewrite !(bounded_t_0_subst _ Hb).
+        feapply ax_trans.
+        - feapply ax_sym. fapply "H0".
+        - fapply "Hz".  }
       { fexists z. rewrite !(bounded_t_0_subst _ Hb). fapply "Hz". }
       replace (φ[_][_][_][_]) with (φ[up x..][y..]).
       2: { rewrite !subst_comp. apply subst_ext.
         now intros [|[|n]]. }
       ctx.
-  Admitted.
+  Qed.
 
   Lemma qdec_bin_bounded_forall t φ :
     Qdec φ -> Qdec (∀∀ $1 ⊕ $0 ⧀= t`[↑]`[↑] ~> φ).

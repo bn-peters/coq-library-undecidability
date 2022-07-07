@@ -176,9 +176,6 @@ Section Qdec.
       frewrite <- (ax_add_rec x0 x1). frewrite <- "H0".
       fapply "H".
   Qed.
-  Lemma pless_bin_zero_eq x y : Qeq ⊢ x ⊕ y ⧀= zero ~> x == zero ∧ y == zero.
-  Proof.
-  Admitted.
   Lemma pless_swap_zero_eq x : Qeq ⊢ (x ⧀=comm zero) ~> x == zero.
   Proof.
     rewrite !pless_swap_eq. 
