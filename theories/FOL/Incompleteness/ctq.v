@@ -225,13 +225,12 @@ Section ctq.
   Hypothesis wrepr : forall c x y, theta c x ▷ y <-> Qeq ⊢ ∃ (φ c)[$0 .: num x .: (num y)..].
 
   Local Definition ψ : nat -> form := fun c =>
-    ∃ (φ c)[$0.:$1.:$2..] ∧ ∀∀ ($1 ⊕ $0 ⧀= $4 ⊕ $2) ~> (φ c)[$0.:$3.:$1..] ~> $1 == $4.
+    ∃ (φ c) ∧ ∀∀ ($1 ⊕ $0 ⧀= $4 ⊕ $2) ~> (φ c)[$0.:$3.:$1..] ~> $1 == $4.
 
   Lemma ψ_bounded c : bounded 2 (ψ c).
   Proof.
     repeat solve_bounds.
-    - eapply subst_bound; last auto.
-      intros [|[|[|k]]]; solve_bounds.
+    - auto.
     - rewrite pless_eq. cbn. unfold "↑". repeat solve_bounds.
     - eapply subst_bound; last auto.
       intros [|[|[|k]]]; solve_bounds.
@@ -240,7 +239,7 @@ Section ctq.
   Proof.
     constructor. constructor.
     apply Qdec_and.
-    - now apply Qdec_subst.
+    - auto.
     - apply (Qdec_bin_bounded_forall ($2 ⊕ $0)).
       apply Qdec_impl.
       + now apply Qdec_subst. 
@@ -250,8 +249,7 @@ Section ctq.
     ∃ (φ c)[$0 .: x`[↑] .: y`[↑]..] ∧ ∀∀ ($1 ⊕ $0 ⧀= y`[↑]`[↑]`[↑] ⊕ $2) ~> (φ c)[$0 .: x`[↑]`[↑]`[↑] .: $1..] ~> $1 == y`[↑]`[↑]`[↑].
   Proof.
     cbn. do 2 f_equal.
-    { rewrite subst_comp. 
-      eapply bounded_subst; first auto.
+    { eapply bounded_subst; first auto.
       intros [|[|[|n]]]; cbn; solve_bounds. }
     do 4 f_equal.
     rewrite subst_comp. 
@@ -259,8 +257,15 @@ Section ctq.
     intros [|[|[|n]]]; cbn; solve_bounds.
   Qed.
 
+  Lemma fdjskl c s t :
+    Qeq ⊢ (ψ c)[s.:t..] ~> ∃ (φ c)[$0 .: s`[↑] .: t`[↑]..].
+  Proof.
+    rewrite sdjfkl. fstart.
+    fintros "[k [H1 H2]]".
+    fexists k. fstart.
+    fapply "H".
+  Qed.
 
-  Check nameless_equiv_ex.
   Lemma ExE_named A χ ψ :
     A ⊢ ∃ χ -> (forall t, (χ[t..]::A) ⊢ ψ) -> A ⊢ ψ.
   Proof.
@@ -270,62 +275,106 @@ Section ctq.
     - apply Ht, H2.
   Qed.
 
+  Lemma vjkl c x y :
+    Qeq ⊢ ∀ (ψ c)[num x .: $0 ..] <~> $0 == num y -> theta c x ▷ y.
+  Proof.
+    intros H. apply wrepr.
+    rewrite <-(num_subst x ↑), <-(num_subst y ↑).
+    eapply IE; first apply fdjskl.
+    apply AllE with (t := num y) in H.
+    cbn -[ψ] in H. replace ((ψ c)[_][_]) with (ψ c)[num x .: (num y)..] in H.
+    2: { rewrite subst_comp. eapply bounded_subst; first apply ψ_bounded.
+      intros [|[|n]]; solve_bounds; cbn; now rewrite num_subst. }
+    eapply IE.
+    { eapply CE2, H. }
+    rewrite num_subst. fapply ax_refl.
+  Qed.
+  Lemma vjd ρ s t :
+    eval (s .: ρ) t`[↑] = eval ρ t.
+  Proof.
+  Admitted.
+
+
+  Lemma sjk ρ s t :
+    interp_nat; ρ ⊨ (s ⧀= t) <-> (eval ρ s) <= (eval ρ t).
+  Proof.
+    rewrite pless_eq. split.
+    - intros [k Hk]. cbn in Hk.
+      rewrite !vjd in Hk. lia.
+    - intros H. cbn. exists (eval ρ t - eval ρ s).
+      rewrite !vjd. lia.
+  Qed.
+
+
+  Lemma dfj c x y :
+    theta c x ▷ y -> Qeq ⊢ (ψ c)[num x .: (num y) ..].
+  Proof.
+    intros H.
+    pose proof H as [k Hk%soundness]%wrepr%Σ1_witness.
+    2: { apply Σ1_subst. now constructor. }
+    2: { eapply subst_bound; last auto.
+      intros [|[|[|n]]]; solve_bounds; apply num_bound. }
+    specialize (Hk nat interp_nat (fun _ => 0) (nat_is_Q_model _)).
+    apply Σ1_completeness with (ρ := fun _ => 0).
+    { apply Σ1_subst, ψ_Σ1. }
+    { eapply subst_bound; last apply ψ_bounded.
+      intros [|[|n]]; solve_bounds; apply num_bound. }
+    exists k. split.
+    - pattern ((φ c)[up (num x .: (num y)..)]).
+      erewrite bounded_subst.
+      + apply sat_single_nat, Hk.
+      + auto.
+      + intros [|[|[|n]]]; solve_bounds; apply num_subst.
+    - intros y' k' _ H'. cbn.
+      rewrite !num_subst. rewrite <-iμ_eval_num, iμ_standard.
+      eapply part_functional; last apply H.
+      apply wrepr, Σ1_completeness with (ρ := fun _ => 0).
+      { do 2 constructor. now apply Qdec_subst. }
+      { admit. }
+      exists k'. admit.
+  Admitted.
+
+  Lemma dsfjl s t :
+    ((s == t)::Qeq) ⊢ t == s.
+  Proof.
+    fapply ax_sym. ctx.
+  Qed.
+
+
   Lemma epf_n_ctq : CTQ.
   Proof.
     intros f. destruct (theta_universal f) as [c Hc]. exists (ψ c).
     split; first apply ψ_bounded.
     split; first apply ψ_Σ1.
-    intros x y. rewrite sdjfkl.
-    split; first (intros Hf; apply AllI_named; intros y'; cbn; apply CI).
-    - fstart. fintros "[k [H1 H2]]". 
-      clear wrepr. cbn.
-      fspecialize ("H2" y').
-      admit. (* Proofmode buggy *)
-    - assert (exists k, Qeq ⊢ (φ c)[num k .: num x .: (num y) ..]).
-      { Check Σ1_witness.
-      admit.
-    - intros H. apply Hc, wrepr.
-      fspecialize (H (num y)). fdestruct H.
-
-      intros [k Hk]%Hc%wrepr%Σ1_witness. 
-      2: { apply Σ1_subst. now constructor. }
-      2: { admit. (* boundedness *) }
-      cbn. rewrite pless_subst. cbn. unfold "↑". 
-      fstart. fintros y'. fsplit.
-      + fintros "[k' [H1 H2]]".
-        admit. (* the only interesting case *)
-      + fintros "H". fexists (num k). fsplit.
-        * fstop.
-          replace φ[_][_][_][_] with φ[num k .: (num x) .: $0 ..][y'..].
-          2: { rewrite !subst_comp. eapply bounded_subst; first eassumption.
-            intros [|[|[|l]]] H; cbn; now rewrite ?num_subst, ?subst_term_shift + lia. }
-          feapply Q_leibniz.
-          -- clear Hk Hφ wrepr. feapply ax_sym. ctx.
-          -- admit. (* just replace substitutions *)
-        * fassert (∀∀ $1 ⊕ $0 ⧀= num y ⊕ num k ~> φ[$0.:num x.:$1 ..] ~> $1 == num y); first last.
-          { fintros y'' k' "H1". fintros "H2". clear Hk Hφ wrepr.
-            (* Proof outline:
-               - rewrite "H"
-               - apply "H0" y'' k' H2. *) 
-            admit. (* TODO: fight with proofmode *) }
-          fstop. eapply (Weak Qeq); last easy.
-          eapply Σ1_completeness.
-          { admit. (* Sigma1 *) }
-          { admit. (* boundedness *)}
-          rewrite pless_eq. cbn.
-          intros y'' k' _ H.
-          rewrite nat_eval_num in *.
-          eapply part_functional with (p := f x); apply Hc; apply Hφ.
-          -- eapply Σ1_completeness.
-             { admit. (* Sigma1 *)}
-             { admit. (* boundedness *) }
-             exists k'. 
-             admit. (* Easy up to lemmas on satisfiability *)
-          -- fexists (num k). assumption.
-    - intros H. apply Hc, Hφ. cbn in H.
-      fstart.
-      fspecialize (H (num y)). rewrite !num_subst in H.
-      (* easy, since H contains the assumption when instantiating with num y == num y *)
-      admit.
+    intros x y. 
+    split; first (intros Hf; apply AllI_named; intros y'; cbn -[ψ]; apply CI).
+    - apply II. eapply ExE_named.
+      { apply Ctx. now left. }
+      (* intros k. *)
+      (* Check ExE. *)
+      (* fintros "[k [H1 H2]]". *) 
+      (* clear wrepr. cbn. *)
+      (* Fail fspecialize ("H2" y'). *)
+      (* the interesting case *)
+      admit. (* Proofmode fucky *)
+    - fintros.
+      Check Q_leibniz. 
+      eapply IE.
+      { eapply IE.
+        { eapply Weak.
+          { apply (Q_leibniz (ψ c)[num x .: $0 ..] (num y) y'). }
+          auto. }
+        rewrite num_subst.
+        fstart. 
+        clear wrepr φ1_bounded φ1_qdec φ.
+        admit. }
+      Check dfj.
+      eapply Weak.
+      + rewrite subst_comp. erewrite bounded_subst.
+        * apply dfj, Hc, Hf.
+        * apply ψ_bounded.
+        * intros [|[|n]]; solve_bounds; apply num_subst.
+      + auto.
+    - intros H. apply Hc, vjkl, H.
   Admitted.
 End ctq.
