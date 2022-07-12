@@ -127,18 +127,30 @@ Section Qdec.
     { apply subst_t_closed, Hb. }
     destruct (@closed_term_is_num _ s`[ρ]) as [k2 Hk2].
     { apply subst_t_closed, Hb. }
-    assert (k1 <= k2 \/ ~k1 <= k2) as [Hk|Hk] by lia.
-    - left. rewrite pless_eq. cbn. fexists (num (k2 - k1)).
-      frewrite Hk1. frewrite Hk2.
-      clear Hk2 Hk1. induction k2 as [|k2 IH].
-      + assert (k1 = 0) as -> by lia. cbn.
-        frewrite (ax_add_zero zero). fapply ax_refl.
-      + assert (k1 = S k2 \/ k1 <= k2) as [->|H] by lia.
-        * replace (S k2 - S k2) with 0 by lia.
-          cbn. admit.
-        * cbn. admit.
-    - admit.
-  Admitted.
+    rewrite pless_subst.
+    enough (Qeq ⊢ num k1 ⧀= num k2 \/ Qeq ⊢ ¬(num k1 ⧀= num k2)) as [H|H].
+    { left. rewrite pless_eq in *. frewrite Hk1. frewrite Hk2. rewrite !num_subst in H. fapply H. }
+    { right. rewrite pless_eq in *. frewrite Hk1. frewrite Hk2. rewrite !num_subst in H. fapply H. }
+    clear Hk1 Hk2.
+    induction k1 as [|k1 IH] in k2 |-*.
+    - left. rewrite pless_eq. fexists (num k2).
+      frewrite (ax_add_zero (num k2)). fapply ax_refl.
+    - destruct k2 as [|k2].
+      + right. rewrite pless_eq. rewrite !num_subst.
+        fstart. fintros "[z H]". fapply (ax_zero_succ (num k1 ⊕ z)).
+        frewrite <-(ax_add_rec z (num k1)). fapply "H".
+      + destruct (IH k2) as [IH'|IH'].
+        * left. rewrite pless_eq. fstart.
+          fassert (num k1 ⧀= num k2) as "H"; first apply IH'.
+          rewrite pless_eq.
+          fdestruct "H" as "[z Hz]".
+          fexists z. frewrite (ax_add_rec z (num k1)).
+          fapply ax_succ_congr. fapply "Hz".
+        * right. fstart. fintros "H". fapply IH'.
+          rewrite !pless_eq. fdestruct "H" as "[z Hz]".
+          fexists z. fapply ax_succ_inj.
+          frewrite <-(ax_add_rec z (num k1)). fapply "Hz".
+  Qed.
 
   Lemma Q_eqdec t x : Qeq ⊢ x == (num t) ∨ ¬(x == num t).
   Proof. 

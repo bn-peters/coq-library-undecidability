@@ -23,63 +23,96 @@ Section bin_qdec.
   Existing Instance PA_funcs_signature.
   Existing Instance interp_nat.
 
-  Existing Instance intu.
+  Context `{pei : peirce}.
 
   Lemma Q_add_assoc1 x y z t : Qeq ⊢ num t == (x ⊕ y) ⊕ z ~> num t == x ⊕ (y ⊕ z).
-  Proof. Admitted.
+  Proof. 
+    induction t as [|t IH] in x |-*; fstart; fintros "H".
+    - fassert ax_cases as "C"; first ctx. 
+      fdestruct ("C" x) as "[Hx|[x' Hx']]".
+      + frewrite "H". frewrite "Hx".
+        frewrite (ax_add_zero y). frewrite (ax_add_zero (y ⊕ z)).
+        fapply ax_refl.
+      + fexfalso. fapply (ax_zero_succ ((x' ⊕ y) ⊕ z)).
+        frewrite <-(ax_add_rec z (x' ⊕ y)).
+        frewrite <-(ax_add_rec y x').
+        frewrite <-"Hx'". fapply "H".
+    - fassert ax_cases as "C"; first ctx. 
+      fdestruct ("C" x) as "[Hx|[x' Hx']]".
+      + frewrite "H". frewrite "Hx".
+        frewrite (ax_add_zero y). frewrite (ax_add_zero (y ⊕ z)).
+        fapply ax_refl.
+      + frewrite "Hx'". frewrite (ax_add_rec (y ⊕ z) x').
+        specialize (IH x').
+        fapply ax_succ_congr. fapply IH.
+        fapply ax_succ_inj.
+        frewrite <-(ax_add_rec z (x' ⊕ y)).
+        frewrite <-(ax_add_rec y x').
+        frewrite <-"Hx'". fapply "H".
+  Qed.
   Lemma Q_add_assoc2 x y z t : Qeq ⊢ num t == (x ⊕ y) ⊕ z ~> num t == y ⊕ (x ⊕ z).
-  Proof. Admitted.
-
-
+  Proof. 
+    induction t as [|t IH] in x |-*; fstart; fintros "H".
+    - fassert ax_cases as "C"; first ctx. 
+      fdestruct ("C" x) as "[Hx|[x' Hx']]".
+      + frewrite "H". frewrite "Hx".
+        frewrite (ax_add_zero y). frewrite (ax_add_zero z).
+        fapply ax_refl.
+      + fexfalso. fapply (ax_zero_succ ((x' ⊕ y) ⊕ z)).
+        frewrite <-(ax_add_rec z (x' ⊕ y)).
+        frewrite <-(ax_add_rec y x').
+        frewrite <-"Hx'". fapply "H".
+    - fassert ax_cases as "C"; first ctx. 
+      fdestruct ("C" x) as "[Hx|[x' Hx']]".
+      + frewrite "H". frewrite "Hx".
+        frewrite (ax_add_zero y). frewrite (ax_add_zero z).
+        fapply ax_refl.
+      + frewrite "Hx'". frewrite (ax_add_rec z x').
+        Check add_rec_swap2.
+        pose proof (add_rec_swap2 t y (x' ⊕ z)). cbn in H.
+        fapply ax_sym. fapply H. fapply ax_sym.
+        fapply IH.
+        fapply ax_succ_inj.
+        frewrite <-(ax_add_rec z (x' ⊕ y)).
+        frewrite <-(ax_add_rec y x').
+        frewrite <-"Hx'". fapply "H".
+  Qed.
 
   Lemma bin_bounded_forall_iff t φ : bounded_t 0 t -> 
     Qeq ⊢ (∀∀ ($1 ⊕ $0 ⧀= t) ~> φ) <~>
-          (∀ ($0 ⧀= t) ~> ∀ ($0 ⧀= $1) ~> ∀ ($0 ⧀= $2) ~> ($1 ⊕ $0 ⧀= t) ~> φ[up (up ↑)]).
+          (∀ ($0 ⧀= t) ~> ∀ ($0 ⧀= t) ~> ($1 ⊕ $0 ⧀= t) ~> φ).
   Proof.
     intros Hb. destruct (closed_term_is_num Hb) as [t' Ht'].
     rewrite !pless_eq. cbn. unfold "↑". 
-    fstart. fsplit.
-    - fintros "H" z "[z' Hz']". cbn.
-      fintros x "[x' Hx']".
-      fintros y "[y' Hy']" "[xy' Hxy']".
-      fspecialize ("H" x y).
-      replace (φ[_][_][_][_]) with (φ[up x..][y..]).
-      2: { rewrite !subst_comp. apply subst_ext.
-        intros [|[|n]]; reflexivity. }
-      fapply "H". fexists xy'. rewrite !(bounded_t_0_subst _ Hb). fapply "Hxy'".
+    fstart. 
+    fassert (t == num t') as "Ht" by fapply Ht'.
+    fsplit.
+    - fintros "H" x "Hx".
+      fintros y "Hy" "Hxy".
+      fapply "H". repeat rewrite (bounded_t_0_subst _ Hb). ctx.
     - fintros "H" x y. fintros "[z Hz]".
-      fassert (t == num t') by fapply Ht'.
-      fspecialize ("H" t).
-      fdestruct "H".
-      { fexists zero. rewrite !(bounded_t_0_subst _ Hb).
-         frewrite "H0".
-        frewrite add_zero_num. fapply ax_refl. }
-      fdestruct ("H" x).
-      { fexists (y ⊕ z). 
-        frewrite Ht'. fapply Q_add_assoc1.
+      fapply "H".
+      + fexists (y ⊕ z). 
         rewrite !(bounded_t_0_subst _ Hb).
+        frewrite "Ht". fapply Q_add_assoc1.
         feapply ax_trans.
-        - feapply ax_sym. fapply "H0".
-        - fapply "Hz".  }
-      fdestruct ("H" y).
-      { fexists (x ⊕ z). 
+        * feapply ax_sym. fapply "Ht".
+        * fapply "Hz". 
+      + fexists (x ⊕ z). 
+        rewrite !(bounded_t_0_subst _ Hb).
         frewrite Ht'. fapply Q_add_assoc2.
-        rewrite !(bounded_t_0_subst _ Hb).
         feapply ax_trans.
-        - feapply ax_sym. fapply "H0".
-        - fapply "Hz".  }
-      { fexists z. rewrite !(bounded_t_0_subst _ Hb). fapply "Hz". }
-      replace (φ[_][_][_][_]) with (φ[up x..][y..]).
-      2: { rewrite !subst_comp. apply subst_ext.
-        now intros [|[|n]]. }
-      ctx.
+        * feapply ax_sym. fapply "Ht".
+        * fapply "Hz".  
+      + fexists z. ctx.
   Qed.
 
-  Lemma qdec_bin_bounded_forall t φ :
+
+  Lemma Qdec_bin_bounded_forall t φ :
     Qdec φ -> Qdec (∀∀ $1 ⊕ $0 ⧀= t`[↑]`[↑] ~> φ).
   Proof.
     intros Hφ. 
-    eapply (@Qdec_iff' _ (∀ ($0 ⧀= t`[↑]) ~> ∀ ($0 ⧀= $1) ~> ∀ ($0 ⧀= $2) ~> ($1 ⊕ $0 ⧀= t`[↑]`[↑]`[↑]) ~> φ[up (up ↑)])).
+    eapply (@Qdec_iff' _ (∀ ($0 ⧀= t`[↑]) ~> ∀ ($0 ⧀= t`[↑]`[↑]) ~> ($1 ⊕ $0 ⧀= t`[↑]`[↑]) ~> φ)).
     - intros ρ Hb.
       cbn. rewrite !pless_subst. cbn. rewrite !up_term.
       unfold "↑".
@@ -92,12 +125,10 @@ Section bin_qdec.
       cbn in H'. rewrite !pless_subst in H'.
       rewrite !(bounded_t_0_subst _ Ht). rewrite !(bounded_t_0_subst _ Ht) in H'.
       apply H'.
-    - apply Qdec_bounded_forall.
-      apply Qdec_bounded_forall with (t0 := $0).
-      apply Qdec_bounded_forall with (t0 := $1).
+    - do 2 apply Qdec_bounded_forall.
       apply Qdec_impl.
       + apply Qdec_le.
-      + apply Qdec_subst, Hφ.
+      + assumption.
   Qed.
 
 
