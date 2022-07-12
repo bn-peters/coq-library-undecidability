@@ -24,12 +24,29 @@ Section ctq.
 
   Definition CTQ_total := 
     forall (f : nat -> nat), exists φ, bounded 2 φ /\ Σ1 φ /\ forall x, Qeq ⊢ ∀ φ[num x .: $0..] <~> $0 == num (f x).
+  Definition uCTQ := 
+    exists φ, bounded 3 φ /\ Σ1 φ /\ forall (f : nat -\ nat), exists c, (forall x y, f x ▷ y <-> Qeq ⊢ ∀ φ[num c .: num x .: $0 ..] <~> $0 == num y).
 
   Lemma ctq_ctq_total : CTQ -> CTQ_total.
   Proof.
     intros ctq f. destruct (ctq (partialise f)) as (φ & Hb & HΣ & Hφ).
     exists φ. do 2 (split; first assumption). 
     intros x. apply Hφ. exists 0. reflexivity.
+  Qed.
+  Lemma uctq_ctq : uCTQ -> CTQ.
+  Proof.
+    intros (φ & Hb & HΣ & Hφ). 
+    intros f. destruct (Hφ f) as [c Hc].
+    exists (φ[(num c)..]). 
+    split.
+    { eapply subst_bound; last eassumption.
+      intros [|[|[|n]]]; solve_bounds; apply num_bound. }
+    split.
+    { apply Σ1_subst, HΣ. }
+    intros x y.  specialize (Hc x y). 
+    enough (φ[num c .: num x .: $0 ..] = φ[(num c)..][num x .: $0..]) by congruence.
+    rewrite subst_comp. apply subst_ext.
+    intros [|[|[|n]]]; cbn; now rewrite ?num_subst.
   Qed.
 End ctq.
 
@@ -215,50 +232,59 @@ Section ctq.
 
   Existing Instance intu.
 
-  Print EPF_N.
   Variable theta : nat -> nat -\ nat.
   Variable theta_universal : is_universal theta.
 
-  Variable (φ : nat -> form).
-  Hypothesis φ1_qdec : forall c, Qdec (φ c).
-  Hypothesis φ1_bounded : forall c, bounded 3 (φ c).
-  Hypothesis wrepr : forall c x y, theta c x ▷ y <-> Qeq ⊢ ∃ (φ c)[$0 .: num x .: (num y)..].
+  Variable (φ : form).
+  Hypothesis φ1_qdec : Qdec φ.
+  Hypothesis φ1_bounded : bounded 4 φ.
+  Hypothesis wrepr : forall c x y, theta c x ▷ y <-> Qeq ⊢ ∃ φ[$0 .: num c .: num x .: (num y)..].
 
-  Local Definition ψ : nat -> form := fun c =>
-    ∃ (φ c) ∧ ∀∀ ($1 ⊕ $0 ⧀= $4 ⊕ $2) ~> (φ c)[$0.:$3.:$1..] ~> $1 == $4.
+  Local Definition ψ' : form :=
+    φ ∧ ∀∀ ($1 ⊕ $0 ⧀= $5 ⊕ $2) ~> φ[$0.:$3.:$4.:$1..] ~> $1 == $5.
+  Local Definition ψ : form :=
+    ∃ψ'.
 
-  Lemma ψ_bounded c : bounded 2 (ψ c).
+  Lemma ψ'_bounded : bounded 4 ψ'.
   Proof.
     repeat solve_bounds.
     - auto.
     - rewrite pless_eq. cbn. unfold "↑". repeat solve_bounds.
-    - eapply subst_bound; last auto.
-      intros [|[|[|k]]]; solve_bounds.
+    - eapply subst_bound; last eassumption.
+      intros [|[|[|[|k]]]]; solve_bounds.
   Qed.
-  Lemma ψ_Σ1 c : Σ1 (ψ c).
+  Lemma ψ_bounded : bounded 3 ψ.
   Proof.
-    constructor. constructor.
+    constructor. apply ψ'_bounded.
+  Qed.
+  Lemma ψ'_Qdec : Qdec ψ'.
+  Proof.
     apply Qdec_and.
     - auto.
-    - apply (Qdec_bin_bounded_forall ($2 ⊕ $0)).
+    - apply (Qdec_bin_bounded_forall ($3 ⊕ $0)).
       apply Qdec_impl.
       + now apply Qdec_subst. 
       + apply Qdec_eq.
   Qed.
-  Lemma sdjfkl c x y : (ψ c)[x.:y..] = 
-    ∃ (φ c)[$0 .: x`[↑] .: y`[↑]..] ∧ ∀∀ ($1 ⊕ $0 ⧀= y`[↑]`[↑]`[↑] ⊕ $2) ~> (φ c)[$0 .: x`[↑]`[↑]`[↑] .: $1..] ~> $1 == y`[↑]`[↑]`[↑].
+  Lemma ψ_Σ1 : Σ1 ψ.
+  Proof.
+    constructor. constructor.
+    apply ψ'_Qdec.
+  Qed.
+  Lemma sdjfkl c x y : ψ[c.:x.:y..] = 
+    ∃ φ[$0 .: c`[↑] .: x`[↑] .: y`[↑]..] ∧ ∀∀ ($1 ⊕ $0 ⧀= y`[↑]`[↑]`[↑] ⊕ $2) ~> φ[$0 .: c`[↑]`[↑]`[↑] .: x`[↑]`[↑]`[↑] .: $1..] ~> $1 == y`[↑]`[↑]`[↑].
   Proof.
     cbn. do 2 f_equal.
-    { eapply bounded_subst; first auto.
-      intros [|[|[|n]]]; cbn; solve_bounds. }
+    { eapply bounded_subst; first eassumption.
+      intros [|[|[|[|n]]]]; cbn; solve_bounds. }
     do 4 f_equal.
     rewrite subst_comp. 
-    eapply bounded_subst; first auto.
-    intros [|[|[|n]]]; cbn; solve_bounds.
+    eapply bounded_subst; first eassumption.
+    intros [|[|[|[|n]]]]; cbn; solve_bounds.
   Qed.
 
-  Lemma fdjskl c s t :
-    Qeq ⊢ (ψ c)[s.:t..] ~> ∃ (φ c)[$0 .: s`[↑] .: t`[↑]..].
+  Lemma fdjskl s t u :
+    Qeq ⊢ ψ[s.:t.:u..] ~> ∃ φ[$0 .: s`[↑] .: t`[↑] .: u`[↑]..].
   Proof.
     rewrite sdjfkl. fstart.
     fintros "[k [H1 H2]]".
@@ -266,6 +292,7 @@ Section ctq.
     fapply "H".
   Qed.
 
+  (* TODO move *)
   Lemma ExE_named A χ ψ :
     A ⊢ ∃ χ -> (forall t, (χ[t..]::A) ⊢ ψ) -> A ⊢ ψ.
   Proof.
@@ -276,15 +303,15 @@ Section ctq.
   Qed.
 
   Lemma vjkl c x y :
-    Qeq ⊢ ∀ (ψ c)[num x .: $0 ..] <~> $0 == num y -> theta c x ▷ y.
+    Qeq ⊢ ∀ ψ[num c .: num x .: $0 ..] <~> $0 == num y -> theta c x ▷ y.
   Proof.
     intros H. apply wrepr.
-    rewrite <-(num_subst x ↑), <-(num_subst y ↑).
+    rewrite <-(num_subst c ↑), <-(num_subst x ↑), <-(num_subst y ↑).
     eapply IE; first apply fdjskl.
     apply AllE with (t := num y) in H.
-    cbn -[ψ] in H. replace ((ψ c)[_][_]) with (ψ c)[num x .: (num y)..] in H.
+    cbn -[ψ] in H. replace (ψ[_][_]) with ψ[num c .: num x .: (num y)..] in H.
     2: { rewrite subst_comp. eapply bounded_subst; first apply ψ_bounded.
-      intros [|[|n]]; solve_bounds; cbn; now rewrite num_subst. }
+      intros [|[|[|n]]]; solve_bounds; cbn; now rewrite num_subst. }
     eapply IE.
     { eapply CE2, H. }
     rewrite num_subst. fapply ax_refl.
@@ -292,7 +319,8 @@ Section ctq.
   Lemma vjd ρ s t :
     eval (s .: ρ) t`[↑] = eval ρ t.
   Proof.
-  Admitted.
+    rewrite eval_comp. now apply eval_ext.
+  Qed.
 
 
   Lemma sjk ρ s t :
@@ -307,74 +335,148 @@ Section ctq.
 
 
   Lemma dfj c x y :
-    theta c x ▷ y -> Qeq ⊢ (ψ c)[num x .: (num y) ..].
+    theta c x ▷ y -> Qeq ⊢ ψ[num c .: num x .: (num y) ..].
   Proof.
     intros H.
     pose proof H as [k Hk%soundness]%wrepr%Σ1_witness.
     2: { apply Σ1_subst. now constructor. }
-    2: { eapply subst_bound; last auto.
-      intros [|[|[|n]]]; solve_bounds; apply num_bound. }
+    2: { eapply subst_bound; last eassumption.
+      intros [|[|[|[|n]]]]; solve_bounds; apply num_bound. }
     specialize (Hk nat interp_nat (fun _ => 0) (nat_is_Q_model _)).
     apply Σ1_completeness with (ρ := fun _ => 0).
     { apply Σ1_subst, ψ_Σ1. }
     { eapply subst_bound; last apply ψ_bounded.
-      intros [|[|n]]; solve_bounds; apply num_bound. }
+      intros [|[|[|n]]]; solve_bounds; apply num_bound. }
     exists k. split.
-    - pattern ((φ c)[up (num x .: (num y)..)]).
+    - pattern (φ[up (num c .: num x .: (num y)..)]).
       erewrite bounded_subst.
       + apply sat_single_nat, Hk.
-      + auto.
-      + intros [|[|[|n]]]; solve_bounds; apply num_subst.
+      + eassumption.
+      + intros [|[|[|[|n]]]]; solve_bounds; apply num_subst.
     - intros y' k' _ H'. cbn.
       rewrite !num_subst. rewrite <-iμ_eval_num, iμ_standard.
       eapply part_functional; last apply H.
       apply wrepr, Σ1_completeness with (ρ := fun _ => 0).
       { do 2 constructor. now apply Qdec_subst. }
-      { admit. }
-      exists k'. admit.
+      { constructor. eapply subst_bound; last eassumption.
+        intros [|[|[|[|n]]]]; solve_bounds; apply num_bound. }
+      exists k'. 
+      admit. (* Just dealing with substitutions. *)
   Admitted.
 
-  Lemma dsfjl s t :
-    ((s == t)::Qeq) ⊢ t == s.
-  Proof.
-    fapply ax_sym. ctx.
-  Qed.
+  Lemma vsl c x y y' :
+    Qeq ⊢ ψ[num c .: num x .: (num y) ..] -> Qeq ⊢ ψ[num c .: num x .: y'..] ~> y' == num y.
+  Proof. 
+    cbn -[ψ']. 
+    intros [k Hk]%Σ1_witness.
+    2: { apply Σ1_subst. constructor. apply ψ'_Qdec. }
+    2: { eapply subst_bound; last apply ψ'_bounded.
+      intros [|[|[|[|n]]]]; solve_bounds; cbn; rewrite num_subst; apply num_bound. }
+    fintros "[k' [Hk21 Hk22]]".
+    assert (bounded_t 0 (num y ⊕ num k)) as Hbyk.
+    { solve_bounds; apply num_bound. }
+    pose proof (@Qsdec_le intu (num y ⊕ num k) (y' ⊕ k') Hbyk) as Hyk.
+    eapply DE.
+    { eapply Weak; first apply Hyk. auto. }
+    - (* instantiate here *) admit.
+    - (* instantiate Hk *)
+  Admitted.
 
-
-  Lemma epf_n_ctq : CTQ.
+  Lemma epf_n_uctq : uCTQ.
   Proof.
-    intros f. destruct (theta_universal f) as [c Hc]. exists (ψ c).
+    exists ψ.
     split; first apply ψ_bounded.
     split; first apply ψ_Σ1.
+    intros f. destruct (theta_universal f) as [c Hc]. exists c.
     intros x y. 
     split; first (intros Hf; apply AllI_named; intros y'; cbn -[ψ]; apply CI).
-    - apply II. eapply ExE_named.
-      { apply Ctx. now left. }
-      (* intros k. *)
-      (* Check ExE. *)
-      (* fintros "[k [H1 H2]]". *) 
-      (* clear wrepr. cbn. *)
-      (* Fail fspecialize ("H2" y'). *)
-      (* the interesting case *)
-      admit. (* Proofmode fucky *)
+    - fintros. rewrite num_subst.
+      pose proof (@vsl c x y y') as Heq.
+      eapply IE.
+      + eapply Weak.
+        * apply Heq, dfj, Hc, Hf.
+        * auto.
+      + apply Ctx. left.
+        rewrite subst_comp. eapply bounded_subst; first apply ψ_bounded.
+        intros [|[|[|n]]]; cbn; lia + now rewrite ?num_subst.
     - fintros.
-      Check Q_leibniz. 
       eapply IE.
       { eapply IE.
         { eapply Weak.
-          { apply (Q_leibniz (ψ c)[num x .: $0 ..] (num y) y'). }
+          { apply (Q_leibniz ψ[num c .: num x .: $0 ..] (num y) y'). }
           auto. }
         rewrite num_subst.
-        fstart. 
-        clear wrepr φ1_bounded φ1_qdec φ.
-        admit. }
-      Check dfj.
+        fapply ax_sym. ctx. }
       eapply Weak.
       + rewrite subst_comp. erewrite bounded_subst.
         * apply dfj, Hc, Hf.
         * apply ψ_bounded.
-        * intros [|[|n]]; solve_bounds; apply num_subst.
+        * intros [|[|[|n]]]; solve_bounds; apply num_subst.
       + auto.
     - intros H. apply Hc, vjkl, H.
-  Admitted.
+  Qed.
 End ctq.
+
+Section ctq.
+  Existing Instance PA_preds_signature.
+  Existing Instance PA_funcs_signature.
+  Existing Instance interp_nat.
+
+  Existing Instance intu.
+
+  Definition embed' t := embed t * 2.
+  Definition unembed' c := unembed (Nat.div c 2).
+
+  Lemma unembed'_embed' x y : unembed' (embed' (x, y)) = (x, y).
+  Proof.
+    unfold unembed', embed'.
+    rewrite PeanoNat.Nat.div_mul.
+    - apply embedP.
+    - lia.
+  Qed.
+  Print embed.
+  Lemma adk x : 2 * nat_rec (fun _ : nat => nat) 0 (fun i m : nat => S i + m) x = 
+    x * (x + 1).
+  Proof.
+    induction x as [|x IH]; cbn in *; lia.
+  Qed.
+
+  Lemma embed'_expl x y : embed' (x, y) = y * 2 + (y + x) * (y + x + 1).
+  Proof.
+    unfold embed', embed.
+    rewrite <-adk. lia.
+  Qed.
+  Lemma fsvml φ n : bounded n φ -> Σ1 φ -> exists ψ,
+    bounded (S n) ψ /\ Σ1 ψ /\ forall x y, Qeq ⊢ φ[(num (embed' (x, y)))..] <~> ψ[num x .: (num y)..].
+  Proof. 
+    intros Hb HΣ.
+    exists (φ[($1 ⊗ (σ σ zero) ⊕ ($1 ⊕ $0) ⊗ ($1 ⊕ $0 ⊕ σ zero))..]).
+    split. { admit. }
+    split. { admit. }
+    (* TODO formula needs to be changed to avoid captures *)
+    intros x y.
+    assert (Qeq ⊢ num (embed' (x, y)) == num y ⊗ (σ σ zero) ⊕ (num y ⊕ num x) ⊗ (num y ⊕ num x ⊕ σ zero)) as Heq.
+    { apply Σ1_completeness with (ρ := fun _ => 0).
+      { constructor. apply Qdec_eq. }
+      { repeat solve_bounds; apply num_bound. }
+      cbn. rewrite !eval_num, !iμ_standard.
+      apply embed'_expl. }
+    replace (φ[_][_]) with φ[(num y ⊗ σ (σ zero) ⊕ (num y ⊕ num x) ⊗ ((num y ⊕ num x) ⊕ σ zero))..].
+    2: { rewrite subst_comp. apply subst_ext.
+      intros [|[|[|k]]]; cbn.
+      solve_bounds.
+  Admitted.
+
+  Variable theta_mu_universal : is_universal theta_mu.
+
+  Lemma epf_mu_ctq : uCTQ.
+  Proof.
+    (* destruct (@Q_weak_repr theta_mu_universal (fun t => let '(c, t') := unembed t in let '(x, y) := unembed t' in theta_mu c x ▷ y)) as (φ & Hb & HΣ & Hφ). *)
+    (* { admit. } *)
+    assert (exists φ, Qdec φ /\ bounded 4 φ /\ forall c x y, theta_mu c x ▷ y <-> Qeq ⊢ ∃ φ[$0 .: num c .: num x .: (num y)..]) as (φ & HQ & Hb & Hφ) by admit.
+    eapply epf_n_uctq with (theta := theta_mu) (φ := φ).
+    all: assumption.
+  Admitted.
+
+End ctq.
+

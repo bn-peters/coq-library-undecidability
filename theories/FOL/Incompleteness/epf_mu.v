@@ -244,4 +244,27 @@ Section fol.
     Qed.
     
   End dprm.
+  (** ** Weak representability from DPRM *)
+  Section Q_weakly_represents.
+    Existing Instance intu.
+    Hypothesis mu_universal : is_universal theta_mu.
+
+    Variable P : nat -> Prop.
+    Hypothesis Penum : enumerable P. 
+    Lemma Q_weak_repr : exists φ, bounded 1 φ /\ Σ1 φ /\ forall x, P x <-> Qeq ⊢ φ[(num x)..].
+    Proof.
+      destruct mu_recursive_definable with (P := P) (peirc := intu) as (φ & Hb & HΣ & Hr).
+      { now apply mu_semi_decidable_enumerable. }
+      exists φ. do 2 (split; first assumption).
+      intros x. erewrite Hr. instantiate (1 := fun _ => 0). split.
+      - intros H. eapply Σ1_completeness.
+        + now apply Σ1_subst.
+        + eapply subst_bound; last eassumption.
+          intros [|n] Hn; last lia. apply num_bound.
+        + now rewrite <-sat_single_nat.
+      - intros H. rewrite sat_single_nat. eapply soundness; first eassumption.
+        apply nat_is_Q_model.
+    Qed.
+
+  End Q_weakly_represents.
 End fol.

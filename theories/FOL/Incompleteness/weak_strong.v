@@ -19,26 +19,26 @@ Section Qtrichotomy.
   (* Cannot be concrete here due to bug in Proofmode *)
   Variable (p : peirce).
 
-  Lemma Qdec_le x : Qeq ⊢ ∀((num x ⧀= $0) ∨ ($0 ⧀= (num x))).
+  Lemma Qsdec_le x y : bounded_t 0 x -> Qeq ⊢ ((x ⧀= y) ∨ (y ⧀= x)).
   Proof.
-    induction x; fstart; fintro "y".
-    - fleft. rewrite pless_eq. fexists y. 
-      frewrite (ax_add_zero y). fapply ax_refl.
+    intros Hx. destruct (closed_term_is_num Hx) as [k Hk].
+    rewrite !pless_eq. frewrite Hk. clear Hk.
+    induction k as [|k IH] in y |-*; fstart.
+    - fleft. fexists y. frewrite (ax_add_zero y). fapply ax_refl.
     - fassert (ax_cases); first ctx.
       fdestruct ("H" y) as "[H|[y' H]]".
-      + fright. rewrite pless_eq. fexists (σ (num x)). 
-        frewrite "H". frewrite (ax_add_zero (σ num x)).
+      + fright. fexists (σ (num k)). 
+        frewrite "H". frewrite (ax_add_zero (σ num k)).
         fapply ax_refl.
-      + fspecialize (IHx y'). rewrite !pless_subst in IHx. cbn in IHx. rewrite num_subst in IHx. 
-        fdestruct IHx.
-        * fleft. rewrite !pless_eq. custom_simpl.
+      + specialize (IH y'). 
+        fdestruct IH.
+        * fleft. 
           fdestruct "H0". fexists x0. frewrite "H". frewrite "H0".
           fapply ax_sym. fapply ax_add_rec.
-        * fright. rewrite !pless_eq. custom_simpl.
+        * fright. custom_simpl.
           fdestruct "H0". fexists x0. frewrite "H". frewrite "H0".
           fapply ax_sym. fapply ax_add_rec.
   Qed.
-
 End Qtrichotomy.
 
 
@@ -185,8 +185,7 @@ Section value_disjoint.
       custom_simpl. unfold "↑". fstart.
       fintros "H". fdestruct "H". fdestruct "H".
 
-      pose proof (Qdec_le intu k). fspecialize (H x0). 
-      rewrite !pless_subst, !num_subst in H. cbn in H.
+      pose proof (Qsdec_le intu x0 (num_bound k 0)). 
       fdestruct H.
       - fapply ("H0" (num k)).
         + rewrite pless_subst. simpl_subst. ctx.
