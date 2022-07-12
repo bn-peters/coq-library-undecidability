@@ -280,8 +280,7 @@ Section ctq.
     - fstart. fintros "[k [H1 H2]]". 
       clear wrepr. cbn.
       fspecialize ("H2" y').
-      the interesting case
-      admit. (* Proofmode fucky *)
+      admit. (* Proofmode buggy *)
     - assert (exists k, Qeq ⊢ (φ c)[num k .: num x .: (num y) ..]).
       { Check Σ1_witness.
       admit.
