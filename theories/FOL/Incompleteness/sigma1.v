@@ -195,7 +195,8 @@ Section Sigma1.
   Qed.
 
   (** # <a id="Sigma1_compression" /> #*)
-  Lemma Σ1_compression φ n : bounded n φ -> Σ1 φ -> exists ψ, Qdec ψ /\ bounded (S n) ψ /\ Qeq ⊢ φ <~> ∃ψ.
+  Lemma Σ1_compression φ n : 
+    bounded n φ -> Σ1 φ -> exists ψ, Qdec ψ /\ bounded (S n) ψ /\ Qeq ⊢ φ <~> ∃ψ.
   Proof.
     intros Hb (k & ψ & HΔ & ->)%Σ1_exist_times.
     destruct (@exists_compression ψ n k) as (ψ' & HΔ' & Hb' & H').
@@ -267,8 +268,30 @@ Section conservativity.
   Context {pei : peirce}.
 
   Lemma Σ1_conservativity ϕ :
-    @Σ1 class ϕ -> bounded 0 ϕ -> Qeq ⊢C ϕ -> Qeq ⊢I ϕ.
-  Proof. Admitted.
+    Σ1 ϕ -> bounded 0 ϕ -> Qeq ⊢C ϕ -> Qeq ⊢ ϕ.
+  Proof.
+    intros S1 Hcl Htc.
+    destruct (Σ1_compression Hcl S1) as [α (dec_α & b1_α & Hα)].
+    apply Σ1_completeness_intu; auto.
+    eapply IE with (∃ α).
+    { admit. }
+    do 2 constructor. apply dec_α. }
+    assert (Qeq ⊢C ∃ α).
+    eapply IE with ϕ; auto.
+    { admit. }
+    apply Fr_cl_to_min, soundness in H.
+    refine (let H' := H nat (extend_interp interp_nat _) (fun _ => 0) _ in _).
+    simpl in H'. apply H'.
+    intros [n Hn].
+    destruct (dec_α (fun _ => num n)) as [h|h].
+    - admit.
+    - exists n. apply soundness in h. admit.
+    - clear H H'.
+      enough (Qeq ⊢C ¬ α[fun _ : nat => num n]) as H%Fr_cl_to_min%soundness.
+      refine (let H' := H nat (extend_interp interp_nat _) (fun _ => 0) _ in _).
+      simpl in H'. apply H'.
+      admit.
+  Admitted.
 
   Lemma Σ1_soundness ϕ :
     Σ1 ϕ -> bounded 0 ϕ -> Qeq ⊢ ϕ -> interp_nat ⊨= ϕ.
