@@ -165,9 +165,38 @@ Section lemmas.
     - apply Ht, H2.
   Qed.
 
-
-
 End lemmas.
+
+
+Lemma enumerable_PA_funcs : enumerable__T PA_funcs.
+Proof.
+  cbn. exists (fun k => match k with
+    | 0 => Some Zero
+    | 1 => Some Succ
+    | 2 => Some Plus
+    | _ => Some Mult
+    end).
+  intros [].
+  + now exists 0.
+  + now exists 1.
+  + now exists 2.
+  + now exists 3.
+Qed.
+Lemma enumerable_PA_preds : enumerable__T PA_preds.
+Proof.
+  exists (fun _ => Some Eq). intros []. now exists 0.
+Qed.
+Lemma list_theory_enumerable {Σ_funcs : funcs_signature} {Σ_preds : preds_signature} A : 
+  enumerable (list_theory A).
+Proof.
+  exists (List.nth_error A).
+  intros x. split.
+  - apply List.In_nth_error.
+  - intros [k Hk]. eapply List.nth_error_In, Hk.
+Qed.
+
+
+
 
 (* Definitions of comparisions *)
 Section syntax.

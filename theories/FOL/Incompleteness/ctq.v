@@ -4,7 +4,7 @@ From Undecidability.Shared Require Import Dec embed_nat.
 From Undecidability.FOL.Util Require Import Syntax_facts FullDeduction FullDeduction_facts FullTarski FullTarski_facts Axiomatisations FA_facts Syntax.
 From Undecidability.FOL Require Import PA.
 From Undecidability.FOL.Proofmode Require Import Theories ProofMode Hoas.
-From Undecidability.FOL.Incompleteness Require Import formal_systems abstract_incompleteness fol qdec sigma1 weak_strong bin_qdec utils epf epf_mu fol_incompleteness.
+From Undecidability.FOL.Incompleteness Require Import formal_systems abstract_incompleteness fol qdec sigma1 weak_strong bin_qdec utils epf epf_mu.
 
 From Undecidability.H10 Require Import DPRM dio_single.
 
@@ -12,7 +12,7 @@ Require Import String List.
 Import ListNotations.
 
 Section ctq.
-  Context {p : peirce}.
+  Context {pei : peirce}.
 
   Existing Instance PA_preds_signature.
   Existing Instance PA_funcs_signature.
@@ -54,15 +54,14 @@ Section ctq_epf.
   Existing Instance PA_preds_signature.
   Existing Instance PA_funcs_signature.
   Existing Instance interp_nat.
-  Existing Instance intu.
-
-  Search (enumerable__T PA_preds).
+  Context {pei : peirce}.
 
   Lemma Q_num_inj x y : Qeq ⊢ num x == num y -> x = y.
   Proof. 
-    intros H%soundness.
-    specialize (H _ interp_nat (fun _ => 0) (nat_is_Q_model _)). cbn in H.
-    now rewrite <-!iμ_eval_num, !iμ_standard in H.
+    intros H. apply Σ1_soundness with (rho := fun _ => 0) in H.
+    - cbn in H. now rewrite <-!iμ_eval_num, !iμ_standard in H.
+    - constructor. apply Qdec_eq.
+    - solve_bounds; apply num_bound.
   Qed.
 
   Lemma prv_enumerable (T : list form) (p' : peirce) :
@@ -83,7 +82,7 @@ Section ctq_epf.
   Lemma ctq_epfn : CTQ -> EPF_N.
   Proof.
     unshelve edestruct (@form_enumerable PA_funcs_signature PA_preds_signature enumerable_PA_funcs enumerable_PA_preds) as [f_form Hform].
-    assert (semi_decidable (fun ψ => Qeq ⊢I ψ)) as [f_prv Hprv].
+    assert (semi_decidable (fun ψ => Qeq ⊢ ψ)) as [f_prv Hprv].
     { apply enumerable_semi_decidable.
       - apply form_discrete.
       - apply prv_enumerable. }
@@ -103,11 +102,11 @@ Section ctq_epf.
       destruct (unembed k1) as [l1 y'1].
       destruct (unembed k2) as [l2 y'2].
       destruct (f_prv _ l1) eqn:H1, (f_prv _ l2) eqn:H2.  2-4: congruence. intros [= <-] [= <-].
-      assert (Qeq ⊢I ∀ φ[num x .: $0..] <~> $0 == num y'1) as H1'. 
+      assert (Qeq ⊢ ∀ φ[num x .: $0..] <~> $0 == num y'1) as H1'. 
       { apply Hprv. eauto. }
-      assert (Qeq ⊢I ∀ φ[num x .: $0..] <~> $0 == num y'2) as H2'. 
+      assert (Qeq ⊢ ∀ φ[num x .: $0..] <~> $0 == num y'2) as H2'. 
       { apply Hprv. eauto. }
-      enough (Qeq ⊢I num y'1 == num y'2).
+      enough (Qeq ⊢ num y'1 == num y'2).
       { apply Q_num_inj, H. }
       fspecialize (H2' (num y'1)). rewrite num_subst in H2'.
       fapply H2'.
@@ -134,8 +133,7 @@ Section ctq_repr.
   Existing Instance PA_funcs_signature.
   Existing Instance interp_nat.
 
-  (* Context {p : peirce}. *) 
-  Existing Instance intu.
+  Context {p : peirce}. 
 
   Lemma ctq_weak_repr (ctq : CTQ_total) (P : nat -> Prop) :
     enumerable P -> exists φ,
@@ -224,7 +222,7 @@ Section ctq.
   Existing Instance PA_funcs_signature.
   Existing Instance interp_nat.
 
-  Existing Instance intu.
+  Context `{pei : peirce}.
 
   Variable theta : nat -> nat -\ nat.
   Variable theta_universal : is_universal theta.
@@ -324,15 +322,18 @@ Section ctq.
     theta c x ▷ y -> Qeq ⊢ ψ[num c .: num x .: (num y) ..].
   Proof.
     intros H.
-    pose proof H as [k Hk%soundness]%wrepr%Σ1_witness.
-    2: { apply Σ1_subst. now constructor. }
-    2: { eapply subst_bound; last eassumption.
-      intros [|[|[|[|n]]]]; solve_bounds; apply num_bound. }
-    specialize (Hk nat interp_nat (fun _ => 0) (nat_is_Q_model _)).
-    apply Σ1_completeness with (ρ := fun _ => 0).
+    apply Σ1_completeness.
     { apply Σ1_subst, ψ_Σ1. }
     { eapply subst_bound; last apply ψ_bounded.
       intros [|[|[|n]]]; solve_bounds; apply num_bound. }
+    intros ρ.
+    pose proof H as [k Hk]%wrepr%Σ1_witness; first apply Σ1_soundness with (rho := ρ) in Hk; first last.
+    { eapply subst_bound; last eassumption.
+      intros [|[|[|[|n]]]]; solve_bounds; apply num_bound. }
+    { apply Σ1_subst. now constructor. }
+    { rewrite subst_comp. eapply subst_bound; last eassumption.
+      intros [|[|[|[|n]]]]; solve_bounds; cbn; rewrite ?num_subst; apply num_bound. }
+    { do 2 apply Σ1_subst. now constructor. }
     exists k. split.
     - pattern (φ[up (num c .: num x .: (num y)..)]).
       erewrite bounded_subst.
@@ -342,17 +343,20 @@ Section ctq.
     - intros y' k' _ H'. cbn.
       rewrite !num_subst. rewrite <-iμ_eval_num, iμ_standard.
       eapply part_functional; last apply H.
-      apply wrepr, Σ1_completeness with (ρ := fun _ => 0).
+      apply wrepr, Σ1_completeness.
       { do 2 constructor. now apply Qdec_subst. }
       { constructor. eapply subst_bound; last eassumption.
         intros [|[|[|[|n]]]]; solve_bounds; apply num_bound. }
-      exists k'. 
+      intros ρ'. exists k'. 
       apply sat_single_nat. do 3 rewrite sat_single_nat in H'.
       evar (f : form).
-      replace φ[_][_] with ?f; first apply H'.
-      rewrite !subst_comp.
-      eapply bounded_subst; first eassumption.
-      intros [|[|[|[|n]]]] Hn; cbn; rewrite ?num_subst; congruence + lia.
+      replace φ[_][_] with ?f.
+      + eapply sat_closed; last apply H'.
+        rewrite !subst_comp. eapply subst_bound; last eassumption.
+        intros [|[|[|[|n]]]] Hn; cbn; rewrite ?num_subst; apply num_bound + lia.
+      + rewrite !subst_comp.
+        eapply bounded_subst; first eassumption.
+        intros [|[|[|[|n]]]] Hn; cbn; rewrite ?num_subst; congruence + lia.
   Qed.
 
   Lemma ψ_functional c x y y' :
@@ -375,7 +379,7 @@ Section ctq.
     fintros "[k' [Hk21 Hk22]]".
     assert (bounded_t 0 (num y ⊕ num k)) as Hbyk.
     { solve_bounds; apply num_bound. }
-    pose proof (@Qsdec_le intu (num y ⊕ num k) (y' ⊕ k') Hbyk) as Hyk.
+    pose proof (@Qsdec_le pei (num y ⊕ num k) (y' ⊕ k') Hbyk) as Hyk.
     eapply DE.
     { eapply Weak; first apply Hyk. auto. }
     - assert (Qeq ⊢ ax_sym) as Hsym by ctx.
@@ -450,7 +454,7 @@ Section ctq.
   Existing Instance PA_funcs_signature.
   Existing Instance interp_nat.
 
-  Existing Instance intu.
+  Context `{pei : peirce}.
 
   Definition embed' t := embed t * 2.
   Definition unembed' c := unembed (Nat.div c 2).
@@ -485,10 +489,10 @@ Section ctq.
       - unfold funcomp. constructor. lia. }
     intros x y.
     assert (Qeq ⊢ num (embed' (x, y)) == num y ⊗ (σ σ zero) ⊕ (num y ⊕ num x) ⊗ (num y ⊕ num x ⊕ σ zero)) as Heq.
-    { apply Σ1_completeness with (ρ := fun _ => 0).
+    { apply Σ1_completeness.
       { constructor. apply Qdec_eq. }
       { repeat solve_bounds; apply num_bound. }
-      cbn. rewrite !eval_num, !iμ_standard.
+      intros ρ. cbn. rewrite !eval_num, !iμ_standard.
       apply embed'_expl. }
     replace (φ[_][_]) with φ[(num y ⊗ σ (σ zero) ⊕ (num y ⊕ num x) ⊗ (num y ⊕ num x ⊕ σ zero))..].
     2: { rewrite subst_comp. apply subst_ext.
@@ -555,7 +559,7 @@ Section ctq.
 
   Lemma epf_mu_uctq : uCTQ.
   Proof.
-    destruct (@Q_weak_repr theta_mu_universal (fun t => let '(t', y) := unembed' t in let '(c, x) := unembed' t' in theta_mu c x ▷ y)) as (φ1 & Hb1 & HΣ1 & Hφ1); first apply theta_mu_enumerable.
+    destruct (@Q_weak_repr pei theta_mu_universal (fun t => let '(t', y) := unembed' t in let '(c, x) := unembed' t' in theta_mu c x ▷ y)) as (φ1 & Hb1 & HΣ1 & Hφ1); first apply theta_mu_enumerable.
     assert (exists φ, Σ1 φ /\ bounded 3 φ /\ forall c x y, theta_mu c x ▷ y <-> Qeq ⊢ φ[num c .: num x .: (num y)..]) as (φ2 & HΣ2 & Hb2 & Hφ2).
     { destruct (compress_free3 Hb1) as (ρ & Hb & Hρ). exists (φ1[ρ]).
       split; first (apply Σ1_subst, HΣ1).
@@ -571,7 +575,7 @@ Section ctq.
       apply subst_Weak with (xi := num c .: num x .: (num y)..) in Hφ.
       change (map _ _) with Qeq in Hφ. cbn in Hφ.
       replace (φ[$0 .: _]) with (φ[up (num c .: num x .: (num y)..)]).
-      { split; intros H; fapply Hφ; apply H. }
+      { apply prv_intu_class with (p := pei) in Hφ. split; intros H; fapply Hφ; apply H. }
       eapply bounded_subst; first eassumption.
       intros [|[|[|[|n]]]] H; cbn; lia + now rewrite ?num_subst. }
     eapply epf_n_uctq with (theta := theta_mu) (φ := φ3).

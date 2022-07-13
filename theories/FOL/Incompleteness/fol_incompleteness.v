@@ -4,7 +4,7 @@ From Undecidability.Shared Require Import Dec embed_nat.
 From Undecidability.FOL.Util Require Import Syntax_facts FullDeduction FullDeduction_facts FullTarski FullTarski_facts Axiomatisations FA_facts Syntax.
 From Undecidability.FOL Require Import PA.
 From Undecidability.FOL.Proofmode Require Import Theories ProofMode Hoas.
-From Undecidability.FOL.Incompleteness Require Import formal_systems abstract_incompleteness fol sigma1 weak_strong utils epf epf_mu.
+From Undecidability.FOL.Incompleteness Require Import formal_systems abstract_incompleteness fol sigma1 weak_strong utils epf epf_mu ctq.
 
 From Undecidability.H10 Require Import DPRM dio_single.
 
@@ -13,25 +13,6 @@ Require Import String List.
 
 
 (** * Incompleteness of first-order logic *)
-
-Lemma enumerable_PA_funcs : enumerable__T PA_funcs.
-Proof.
-  cbn. exists (fun k => match k with
-    | 0 => Some Zero
-    | 1 => Some Succ
-    | 2 => Some Plus
-    | _ => Some Mult
-    end).
-  intros [].
-  + now exists 0.
-  + now exists 1.
-  + now exists 2.
-  + now exists 3.
-Qed.
-Lemma enumerable_PA_preds : enumerable__T PA_preds.
-Proof.
-  exists (fun _ => Some Eq). intros []. now exists 0.
-Qed.
 
 (* first-order logic with an enumerable theory is a formal system *)
 Section fol_fs.
@@ -53,16 +34,6 @@ Section fol_fs.
       + fapply H2. fapply H1.
   Defined.
 End fol_fs.
-
-
-Lemma list_theory_enumerable {Σ_funcs : funcs_signature} {Σ_preds : preds_signature} A : 
-  enumerable (list_theory A).
-Proof.
-  exists (List.nth_error A).
-  intros x. split.
-  - apply List.In_nth_error.
-  - intros [k Hk]. eapply List.nth_error_In, Hk.
-Qed.
 
 
 Section fol.
@@ -133,13 +104,15 @@ Section fol.
 
     Theorem Q_undecidable : ~decidable (@tprv _ _ _ p T).
     Proof.
-      assert (exists f : nat -> nat -\ bool, is_universal f) as [theta theta_universal].
-      { apply epf_nat_bool. now exists theta_mu. }
-      destruct (@Q_weak_repr mu_universal (fun c => theta c c ▷ true) (theta_self_return_enumerable theta true)) as (φ1 & Hb1 & HΣ1 & Hφ1).
-      destruct (@Q_weak_repr mu_universal (fun c => theta c c ▷ false) (theta_self_return_enumerable theta false)) as (φ2 & Hb2 & HΣ2 & Hφ2).
+      assert CTQ as ctq.
+      { apply uctq_ctq, epf_mu_uctq, mu_universal. }
+      assert (exists theta : nat -> nat -\ bool, is_universal theta) as [theta theta_universal].
+      { apply epf_nat_bool, ctq_epfn, ctq. }
       assert (forall c, theta c c ▷ true -> theta c c ▷ false -> False) as Hdisj.
       { intros c Ht Hf. enough (true = false) by discriminate. eapply part_functional; eassumption. }
-      edestruct (weak_strong Hdisj Hb1 Hb2 HΣ1 HΣ2 Hφ1 Hφ2) as (ψ & Hb & HΣ & Hψ1 & Hψ2).
+
+      edestruct (ctq_strong_sepr ctq Hdisj) as (ψ & Hb & HΣ & Hψ1 & Hψ2).
+      1-2: apply theta_self_return_semi_decidable.
       eapply (@fol_undecidable_strong_repr p theta theta_universal T Tenum Tconsis (list_theory Qeq) T_Q (list_theory_enumerable Qeq)).
       instantiate (1 := fun c => ψ[(num c)..]).
       split; intros c H.
@@ -151,16 +124,17 @@ Section fol.
 
     Theorem Q_incomplete : exists φ, bounded 0 φ /\ Σ1 φ /\ ~@tprv _ _ _ p T φ /\ ~@tprv _ _ _ p T (¬φ).
     Proof. 
-      assert (exists f : nat -> nat -\ bool, is_universal f) as [theta theta_universal].
-      { apply epf_nat_bool. now exists theta_mu. }
-
-      destruct (@Q_weak_repr mu_universal (fun c => theta c c ▷ true) (theta_self_return_enumerable theta true)) as (φ1 & Hb1 & HΣ1 & Hφ1).
-      destruct (@Q_weak_repr mu_universal (fun c => theta c c ▷ false) (theta_self_return_enumerable theta false)) as (φ2 & Hb2 & HΣ2 & Hφ2).
+      assert CTQ as ctq.
+      { apply uctq_ctq, epf_mu_uctq, mu_universal. }
+      assert (exists theta : nat -> nat -\ bool, is_universal theta) as [theta theta_universal].
+      { apply epf_nat_bool, ctq_epfn, ctq. }
       assert (forall c, theta c c ▷ true -> theta c c ▷ false -> False) as Hdisj.
       { intros c Ht Hf. enough (true = false) by discriminate. eapply part_functional; eassumption. }
-      edestruct (weak_strong Hdisj Hb1 Hb2 HΣ1 HΣ2 Hφ1 Hφ2) as (ψ & Hb & HΣ & Hψ1 & Hψ2).
+
+      edestruct (ctq_strong_sepr ctq Hdisj) as (ψ & Hb & HΣ & Hψ1 & Hψ2).
+      1-2: apply theta_self_return_semi_decidable.
       edestruct (@fol_incomplete_strong_repr p theta theta_universal T Tenum Tconsis (list_theory Qeq) T_Q (list_theory_enumerable Qeq)).
-      { instantiate (1 := fun c => ψ[(num c)..]). cbn. 
+      { instantiate (1 := fun c => ψ[(num c)..]).
         split; intros c H.
         - exists Qeq. split; first auto.
           now apply prv_intu_class.
@@ -179,3 +153,4 @@ Section fol.
 End fol.
 
 
+Check Q_incomplete.

@@ -23,9 +23,7 @@ Section Qdec.
   Existing Instance PA_preds_signature.
   Existing Instance PA_funcs_signature.
 
-  Context {p : peirce}.
-
-  Definition Qdec φ := forall ρ, (forall k, bounded_t 0 (ρ k)) -> Qeq ⊢ φ[ρ] \/ Qeq ⊢ ¬φ[ρ].
+  Definition Qdec φ := forall (pei : peirce) ρ, (forall k, bounded_t 0 (ρ k)) -> Qeq ⊢ φ[ρ] \/ Qeq ⊢ ¬φ[ρ].
 
   Lemma subst_t_closed t ρ : (forall k, bounded_t 0 (ρ k)) -> bounded_t 0 t`[ρ].
   Proof.
