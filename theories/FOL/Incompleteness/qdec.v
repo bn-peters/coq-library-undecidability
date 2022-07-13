@@ -587,17 +587,6 @@ Section Qdec.
       apply subst_up2. solve_bounds. apply num_bound.
   Qed.
 
-
-  Lemma AllI_named (A : list form) (phi : form) :
-    (forall t, A ⊢ phi[t..]) ->
-    A ⊢ ∀phi.
-  Proof.
-    intros H. apply AllI. 
-    destruct (nameless_equiv_all A phi) as [t Ht].
-    apply Ht, H.
-  Qed.
-  (* NOTE: this lemma could be strengthened to allow arbitrary terms t`[↑] in
-   * place of $(S t). Unfortunately this broke the proofmode for some reason. *)
   Theorem Qdec_bounded_forall t φ :
     Qdec φ -> Qdec (∀ $0 ⧀= t`[↑] ~> φ).
   Proof.

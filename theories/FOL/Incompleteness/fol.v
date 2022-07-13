@@ -10,7 +10,7 @@ Require Import Undecidability.Shared.Libs.DLW.Vec.vec.
 
 From Equations Require Import Equations.
 From Undecidability.FOL.Proofmode Require Import Theories ProofMode Hoas.
-Require Import String.
+Require Import String List.
 Open Scope string_scope.
 
 (** * First-order logic *)
@@ -27,19 +27,7 @@ Section lemmas.
   Existing Instance PA_funcs_signature.
   Existing Instance interp_nat.
 
-
-  Lemma form_ind_falsity_on :
-    forall P : form -> Prop,
-      P falsity ->
-      (forall P0 (t : vec term (ar_preds P0)), P (atom P0 t)) ->
-      (forall (b0 : binop) (f1 : form), P f1 -> forall f2 : form, P f2 -> P (bin b0 f1 f2)) ->
-      (forall (q : quantop) (f2 : form), P f2 -> P (quant q f2)) ->
-      forall (f4 : form), P f4.
-  Proof.
-    intros. specialize (form_ind (fun ff => match ff with falsity_on => P | _ => fun _ => True end)).
-    intros H'. apply H' with (f3 := falsity_on); clear H'. all: intros; try destruct b; trivial.
-    all: intuition eauto 2.
-  Qed.
+  Context `{pei : peirce}.
 
   Lemma num_subst x ρ : (num x)`[ρ] = num x.
   Proof.
@@ -148,6 +136,53 @@ Section lemmas.
     now rewrite sat_single_PA.
   Qed.
 
+
+  Lemma eval_up ρ s t :
+    eval (s .: ρ) t`[↑] = eval ρ t.
+  Proof.
+    rewrite eval_comp. now apply eval_ext.
+  Qed.
+
+
+  Lemma subst_cons_comp2 φ x y :
+    φ[num x .: (num y) ..] = φ[(num x)..][(num y)..].
+  Proof.
+    rewrite subst_comp. apply subst_ext.
+    intros [|[|n]]; cbn; now rewrite ?num_subst.
+  Qed.
+  Lemma subst_cons_comp3 φ x y z :
+    φ[num x .: num y .: (num z) ..] = φ[num x .: (num y)..][(num z)..].
+  Proof.
+    rewrite subst_comp. apply subst_ext.
+    intros [|[|[|n]]]; cbn; now rewrite ?num_subst.
+  Qed.
+
+
+  Lemma AllE_Ctx A χ ψ t :
+    In (∀ψ) A -> (ψ[t..] :: A) ⊢ χ -> A ⊢ χ.
+  Proof.
+    intros H1 H2. eapply IE.
+    - apply II, H2.
+    - apply AllE, Ctx, H1.
+  Qed.
+  Lemma AllI_named (A : list form) (phi : form) :
+    (forall t, A ⊢ phi[t..]) -> A ⊢ ∀phi.
+  Proof.
+    intros H. apply AllI. 
+    destruct (nameless_equiv_all A phi) as [t Ht].
+    apply Ht, H.
+  Qed.
+  Lemma ExE_named A χ ψ :
+    A ⊢ ∃ χ -> (forall t, (χ[t..]::A) ⊢ ψ) -> A ⊢ ψ.
+  Proof.
+    intros H1 H2. destruct (nameless_equiv_ex A χ ψ) as [t Ht].
+    eapply ExE.
+    - eassumption.
+    - apply Ht, H2.
+  Qed.
+
+
+
 End lemmas.
 
 (* Definitions of comparisions *)
@@ -226,6 +261,7 @@ Section syntax.
   Proof.
     intros H. setoid_rewrite <-subst_var at 3. eapply bounded_subst; first eassumption. lia.
   Qed.
+
 
 
 
