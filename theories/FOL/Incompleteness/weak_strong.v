@@ -45,7 +45,7 @@ End Qtrichotomy.
 Section value_disjoint.
   Existing Instance PA_funcs_signature.
   Existing Instance PA_preds_signature.
-  Existing Instance intu.
+  Context `{pei : peirce}.
 
   Variable P1 P2 : nat -> Prop.
   Hypothesis P_disjoint : forall x, P1 x -> P2 x -> False.
@@ -64,24 +64,38 @@ Section value_disjoint.
     Proof.
       rewrite φ1_syn.
       split.
-      - intros H%soundness. apply H, nat_is_Q_model.
-      - apply Σ1_completeness.
+      - intros H. apply Σ1_soundness with (rho := ρ) in H.
+        + assumption.
+        + constructor. apply Σ1_subst. now constructor.
+        + constructor. eapply subst_bound; last eassumption.
+          intros [|[|k]] Hk; apply num_bound + solve_bounds.
+      - intros H. apply Σ1_completeness.
         + do 2 constructor. now apply Qdec_subst.
         + solve_bounds. eapply subst_bound; last eassumption.
-          intros [|[|n]] H; cbn. 2-3: solve_bounds.
+          intros [|[|n]] Hn; cbn. 2-3: solve_bounds.
           apply num_bound.
+        + intros ρ'. eapply sat_closed; last eassumption.
+          constructor. eapply subst_bound; last eassumption.
+          intros [|[|k]] Hk; apply num_bound + solve_bounds.
     Qed.
 
     Local Lemma φ2_sem x ρ : P2 x <-> interp_nat; ρ ⊨ ∃ φ2[(num x) ..].
     Proof.
       rewrite φ2_syn.
       split.
-      - intros H%soundness. apply H, nat_is_Q_model.
-      - apply Σ1_completeness.
+      - intros H. eapply Σ1_soundness in H.  
+        + eassumption.
+        + constructor. apply Σ1_subst. now constructor.
+        + constructor. eapply subst_bound; last eassumption.
+          intros [|[|k]] Hk; apply num_bound + solve_bounds.
+      - intros H. apply Σ1_completeness.
         + do 2 constructor. now apply Qdec_subst.
         + solve_bounds. eapply subst_bound; last eassumption.
-          intros [|[|n]] H; cbn. 2-3: solve_bounds.
+          intros [|[|n]] Hk; cbn. 2-3: solve_bounds.
           apply num_bound.
+        + intros ρ'. eapply sat_closed; last eassumption.
+          constructor. eapply subst_bound; last eassumption.
+          intros [|[|k]] Hk; apply num_bound + solve_bounds.
     Qed.
           
     (* Definition of formulas strongly separating *)
@@ -110,7 +124,7 @@ Section value_disjoint.
     Lemma φ1'_qdec : Qdec φ1'.
     Proof.
       apply Qdec_and; first assumption.
-      apply (@Qdec_bounded_forall _ $1).
+      apply (@Qdec_bounded_forall $1).
       apply Qdec_impl.
       - apply Qdec_subst, φ2_qdec.
       - apply Qdec_bot.
@@ -119,7 +133,7 @@ Section value_disjoint.
     Lemma φ2'_qdec : Qdec φ2'.
     Proof.
       apply Qdec_and; first assumption.
-      apply (@Qdec_bounded_forall _ $1).
+      apply (@Qdec_bounded_forall $1).
       apply Qdec_impl.
       - apply Qdec_subst, φ1_qdec.
       - apply Qdec_bot.
@@ -128,16 +142,17 @@ Section value_disjoint.
     (* Strong separation *)
     Local Lemma DR1 x : P1 x -> Qeq ⊢ ∃ φ1'[(num x)..].
     Proof.
-      intros HP1. eapply Σ1_completeness with (ρ := fun _ => 0).
+      intros HP1. eapply Σ1_completeness.
       { constructor. apply Σ1_subst. constructor. apply φ1'_qdec. }
       { constructor. eapply subst_bound; last apply φ1'_bounded.
         intros [|[|n]] H; try solve_bounds. apply num_bound. }
+      intros ρ.
       pose proof HP1 as H. erewrite (φ1_sem _ _) in H.
       destruct H as [k Hk]. exists k.
       split; first eassumption.
       cbn. intros k' _ Hk'. apply (@P_disjoint x).
       - eapply φ1_sem. exists k. apply Hk.
-      - eapply φ2_sem with (ρ := k .: (fun _ => 0)). exists k'.
+      - eapply φ2_sem with (ρ := k .: ρ). exists k'.
         rewrite subst_comp in Hk'.
         erewrite bounded_subst. 1-2: eassumption.
         intros [|[|n]] H; cbn.
@@ -148,15 +163,16 @@ Section value_disjoint.
 
     Local Lemma DR1' x : P2 x -> Qeq ⊢ ∃ φ2'[(num x)..].
     Proof. 
-      intros HP1. eapply Σ1_completeness with (ρ := fun _ => 0).
+      intros HP1. eapply Σ1_completeness.
       { constructor. apply Σ1_subst. constructor. apply φ2'_qdec. }
       { constructor. eapply subst_bound; last apply φ2'_bounded.
         intros [|[|n]] H; try solve_bounds. apply num_bound. }
+      intros ρ.
       pose proof HP1 as H. erewrite (φ2_sem _ _) in H.
       destruct H as [k Hk]. exists k.
       split; first eassumption.
       cbn. intros k' _ Hk'. apply (@P_disjoint x).
-      - eapply φ1_sem with (ρ := k .: (fun _ => 0)). exists k'.
+      - eapply φ1_sem with (ρ := k .: ρ). exists k'.
         rewrite subst_comp in Hk'.
         erewrite bounded_subst. 1-2: eassumption.
         intros [|[|n]] H; cbn.
@@ -174,18 +190,22 @@ Section value_disjoint.
         - constructor. apply Qdec_subst. apply φ2'_qdec.
         - eapply subst_bound; last apply φ2'_bounded.
           intros [|[|n]] H; try solve_bounds. apply num_bound.
-        - apply Σ1_completeness with (ρ := id).
+        - apply Σ1_completeness.
           + constructor. apply Σ1_subst. constructor. apply φ2'_qdec.
           + constructor. eapply subst_bound; last apply φ2'_bounded.
             intros [|[|n]] H; try solve_bounds. apply num_bound.
-          + apply DR1', soundness in HP2. apply HP2.
-            apply nat_is_Q_model. }
+          + apply Σ1_soundness.
+            * do 2 constructor. apply Qdec_subst. eapply φ2'_qdec.
+            * constructor. 
+              eapply subst_bound; last eapply φ2'_bounded. 
+              intros [|[|n]] H; apply num_bound + solve_bounds.
+            * apply DR1', HP2. }
       cbn in Hk. 
 
       custom_simpl. unfold "↑". fstart.
       fintros "H". fdestruct "H". fdestruct "H".
 
-      pose proof (Qsdec_le intu x0 (num_bound k 0)). 
+      pose proof (Qsdec_le pei x0 (num_bound k 0)). 
       fdestruct H.
       - fapply ("H0" (num k)).
         + rewrite pless_subst. simpl_subst. ctx.
@@ -231,8 +251,6 @@ Section value_disjoint.
   End value_disjoint'.
 
   Section weak_strong.
-    Existing Instance intu.
-
     Variable φ1 φ2 : form.
     Hypothesis (φ1_bounded : bounded 1 φ1) (φ2_bounded : bounded 1 φ2).
     Hypothesis (φ1_Σ : Σ1 φ1) (φ2_qdec : Σ1 φ2).
@@ -250,7 +268,7 @@ Section value_disjoint.
       (forall x, P1 x -> Qeq ⊢ φ[(num x)..]) /\
       (forall x, P2 x -> Qeq ⊢ ¬φ[(num x)..]).
     Proof.
-      destruct (@Σ1_compression _ φ1 1) as (ψ1 & HQ1 & Hb1 & Hψ1), (@Σ1_compression _ φ2 1) as (ψ2 & HQ2 & Hb2 & Hψ2).
+      destruct (@Σ1_compression φ1 1) as (ψ1 & HQ1 & Hb1 & Hψ1), (@Σ1_compression φ2 1) as (ψ2 & HQ2 & Hb2 & Hψ2).
       all: try assumption.
       apply weak_strong' with (φ1 := ψ1[$1.:$0..]) (φ2 := ψ2[$1.:$0..]).
       { eapply subst_bound; last eassumption. intros [|[|n]]; solve_bounds. }
@@ -262,23 +280,25 @@ Section value_disjoint.
         apply (subst_Weak ((num x)..)) in Hψ1.
         change (map _ _) with Qeq in Hψ1.
         cbn in Hψ1.
-        assert (ψ1[$1 .: $0 ..][(num x) ..] = ψ1[up (num x)..]) as ->; last assumption.
-        { rewrite subst_comp. eapply bounded_subst; first eassumption.
+        assert (ψ1[$1 .: $0 ..][(num x) ..] = ψ1[up (num x)..]) as ->.
+        + rewrite subst_comp. eapply bounded_subst; first eassumption.
           intros [|[|n]] Hn; cbn.
-          - reflexivity.
-          - now rewrite num_subst.
-          - lia. }
+          * reflexivity.
+          * now rewrite num_subst.
+          * lia.
+        + apply prv_intu_class, Hψ1.
       - intros x. rewrite φ2_syn. 
         apply iff_iff.
         apply (subst_Weak ((num x)..)) in Hψ2.
         change (map _ _) with Qeq in Hψ2.
         cbn in Hψ2.
-        assert (ψ2[$1 .: $0 ..][(num x) ..] = ψ2[up (num x)..]) as ->; last assumption.
-        { rewrite subst_comp. eapply bounded_subst; first eassumption.
+        assert (ψ2[$1 .: $0 ..][(num x) ..] = ψ2[up (num x)..]) as ->.
+        + rewrite subst_comp. eapply bounded_subst; first eassumption.
           intros [|[|n]] Hn; cbn.
-          - reflexivity.
-          - now rewrite num_subst.
-          - lia. }
+          * reflexivity.
+          * now rewrite num_subst.
+          * lia.
+        + apply prv_intu_class, Hψ2.
     Qed.
 
   End weak_strong.

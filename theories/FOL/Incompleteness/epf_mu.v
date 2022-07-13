@@ -1,4 +1,3 @@
-
 From Undecidability.Synthetic Require Import DecidabilityFacts EnumerabilityFacts ReducibilityFacts.
 
 From Undecidability.H10 Require Import DPRM dio_single.
@@ -246,14 +245,14 @@ Section fol.
   End dprm.
   (** ** Weak representability from DPRM *)
   Section Q_weakly_represents.
-    Existing Instance intu.
+    Context `{pei : peirce}.
     Hypothesis mu_universal : is_universal theta_mu.
 
     Variable P : nat -> Prop.
     Hypothesis Penum : enumerable P. 
     Lemma Q_weak_repr : exists φ, bounded 1 φ /\ Σ1 φ /\ forall x, P x <-> Qeq ⊢ φ[(num x)..].
     Proof.
-      destruct mu_recursive_definable with (P := P) (peirc := intu) as (φ & Hb & HΣ & Hr).
+      destruct mu_recursive_definable with (P := P) as (φ & Hb & HΣ & Hr).
       { now apply mu_semi_decidable_enumerable. }
       exists φ. do 2 (split; first assumption).
       intros x. erewrite Hr. instantiate (1 := fun _ => 0). split.
@@ -261,9 +260,15 @@ Section fol.
         + now apply Σ1_subst.
         + eapply subst_bound; last eassumption.
           intros [|n] Hn; last lia. apply num_bound.
-        + now rewrite <-sat_single_nat.
-      - intros H. rewrite sat_single_nat. eapply soundness; first eassumption.
-        apply nat_is_Q_model.
+        + intros ρ. rewrite sat_single_nat in H.
+          eapply sat_closed; last eassumption.
+          eapply subst_bound; last eassumption.
+          intros [|k] Hk; apply num_bound + solve_bounds.
+      - intros H. rewrite sat_single_nat. eapply Σ1_soundness.
+        + apply Σ1_subst, Hb.
+        + eapply subst_bound; last eassumption.
+          intros [|k] Hk; apply num_bound + solve_bounds.
+        + apply H.
     Qed.
 
   End Q_weakly_represents.

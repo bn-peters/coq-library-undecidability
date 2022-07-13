@@ -71,10 +71,8 @@ Section epf.
   Definition theta_self_return (b : bool) : nat -> Prop :=
     fun x => theta x x ▷ b.
 
-  Lemma theta_self_return_enumerable b : enumerable (theta_self_return b).
-  Proof. 
-    apply semi_decidable_enumerable.
-    { exists (fun n => Some n). intros n. now exists n. }
+  Lemma theta_self_return_semi_decidable b : semi_decidable (theta_self_return b).
+  Proof.
     exists (fun c k => match core (theta c c) k, b with
                        | Some true, true => true
                        | Some false, false => true
@@ -83,6 +81,12 @@ Section epf.
    intros c. split; intros [k Hk]; exists k.
    - rewrite Hk. destruct b; congruence.
    - destruct (core _ _) as [[]|], b; congruence.
+  Qed.
+  Lemma theta_self_return_enumerable b : enumerable (theta_self_return b).
+  Proof. 
+    apply semi_decidable_enumerable.
+    { exists (fun n => Some n). intros n. now exists n. }
+    apply theta_self_return_semi_decidable.
   Qed. 
 
 

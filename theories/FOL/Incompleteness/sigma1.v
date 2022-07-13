@@ -64,7 +64,7 @@ Section Sigma1.
     intros HQ Hb.
     exists (∃ ($0 ⧀= $1) ∧ ∃ ($0 ⧀=comm $2) ∧ φ[up (up (S >> var))]).
     repeat split.
-    { apply (@Qdec_bounded_exists _ $0), (@Qdec_bounded_exists_comm _ $1).
+    { apply (@Qdec_bounded_exists $0), (@Qdec_bounded_exists_comm $1).
       apply Qdec_subst, HQ. }
     { constructor. constructor.
       { rewrite pless_eq. 
@@ -235,7 +235,7 @@ Section Sigma1completeness.
     - intros Hb Hnat.
       assert (Qdec φ[ρ]) as H'.
       { apply Qdec_subst, H. }
-      destruct (H' (fun _ => zero)) as [H1|H1].
+      destruct (H' intu (fun _ => zero)) as [H1|H1].
       { intros _. solve_bounds. }
       + rewrite bounded_0_subst in H1; assumption.
       + (* note: actually only requires consistency, can also be shown for classical *)
@@ -265,8 +265,6 @@ Section conservativity.
   Existing Instance PA_preds_signature.
   Existing Instance PA_funcs_signature.
 
-  Context {pei : peirce}.
-
   Lemma Σ1_conservativity ϕ :
     Σ1 ϕ -> bounded 0 ϕ -> Qeq ⊢C ϕ -> Qeq ⊢ ϕ.
   Proof.
@@ -293,6 +291,8 @@ Section conservativity.
       admit.
   Admitted.
 
+  Context {pei : peirce}.
+
   Lemma Σ1_soundness ϕ :
     Σ1 ϕ -> bounded 0 ϕ -> Qeq ⊢ ϕ -> interp_nat ⊨= ϕ.
   Proof.
@@ -317,7 +317,7 @@ Section Sigma1completeness.
   Theorem Σ1_completeness φ : Σ1 φ -> bounded 0 φ -> interp_nat ⊨= φ -> Qeq ⊢ φ.
   Proof.
     destruct pei; last apply Σ1_completeness_intu.
-    enough (forall ρ, @Σ1 class φ -> bounded 0 φ[ρ] -> interp_nat ⊨= φ[ρ] -> Qeq ⊢C φ[ρ]).
+    enough (forall ρ, Σ1 φ -> bounded 0 φ[ρ] -> interp_nat ⊨= φ[ρ] -> Qeq ⊢C φ[ρ]).
     { intros HΣ Hb Hsat. rewrite <-subst_var. apply H.
       - easy.
       - now rewrite subst_var.
@@ -335,9 +335,9 @@ Section Sigma1completeness.
         eapply subst_bound; last apply H4. 
         intros [|n] Hn; last lia. apply num_bound.
     - intros Hb Hnat.
-      assert (@Qdec class φ[ρ]) as H'.
+      assert (@Qdec φ[ρ]) as H'.
       { apply Qdec_subst, H. }
-      destruct (H' (fun _ => zero)) as [H1|H1].
+      destruct (H' class (fun _ => zero)) as [H1|H1].
       { intros _. solve_bounds. }
       all: rewrite bounded_0_subst in H1; try eassumption.
       contradict Hnat.
