@@ -140,8 +140,6 @@ Section ctq_repr.
   (* Context {p : peirce}. *) 
   Existing Instance intu.
 
-  (* TODO global formulation for weak repr in fol *)
-  (* TODO precedence of .. *)
   Lemma ctq_weak_repr (ctq : CTQ_total) (P : nat -> Prop) :
     enumerable P -> exists φ,
     bounded 1 φ /\ Σ1 φ /\ forall x, P x <-> Qeq ⊢ φ[(num x)..].
@@ -282,6 +280,15 @@ Section ctq.
     eapply bounded_subst; first eassumption.
     intros [|[|[|[|n]]]]; cbn; solve_bounds.
   Qed.
+  Lemma vl k c x y :
+    ψ'[k .: c .: x .: y ..] = φ[k .: c .: x .: y..] ∧  ∀∀ ($1 ⊕ $0 ⧀= y`[↑]`[↑] ⊕ k`[↑]`[↑]) ~> φ[$0 .: c`[↑]`[↑] .: x`[↑]`[↑] .: $1..] ~> $1 == y`[↑]`[↑].
+  Proof.
+    cbn. f_equal.
+    do 4 f_equal.
+    rewrite subst_comp. 
+    eapply bounded_subst; first eassumption.
+    intros [|[|[|[|n]]]]; cbn; solve_bounds.
+  Qed.
 
   Lemma fdjskl s t u :
     Qeq ⊢ ψ[s.:t.:u..] ~> ∃ φ[$0 .: s`[↑] .: t`[↑] .: u`[↑]..].
@@ -361,8 +368,20 @@ Section ctq.
       { constructor. eapply subst_bound; last eassumption.
         intros [|[|[|[|n]]]]; solve_bounds; apply num_bound. }
       exists k'. 
-      admit. (* Just dealing with substitutions. *)
-  Admitted.
+      apply sat_single_nat. do 3 rewrite sat_single_nat in H'.
+      evar (f : form).
+      replace φ[_][_] with ?f; first apply H'.
+      rewrite !subst_comp.
+      eapply bounded_subst; first eassumption.
+      intros [|[|[|[|n]]]] Hn; cbn; rewrite ?num_subst; congruence + lia.
+  Qed.
+  Lemma sdjkl A χ ψ t :
+    In (∀ψ) A -> (ψ[t..] :: A) ⊢ χ -> A ⊢ χ.
+  Proof.
+    intros H1 H2. eapply IE.
+    - apply II, H2.
+    - apply AllE, Ctx, H1.
+  Qed.
 
   Lemma vsl c x y y' :
     Qeq ⊢ ψ[num c .: num x .: (num y) ..] -> Qeq ⊢ ψ[num c .: num x .: y'..] ~> y' == num y.
@@ -372,15 +391,52 @@ Section ctq.
     2: { apply Σ1_subst. constructor. apply ψ'_Qdec. }
     2: { eapply subst_bound; last apply ψ'_bounded.
       intros [|[|[|[|n]]]]; solve_bounds; cbn; rewrite num_subst; apply num_bound. }
+    replace ψ'[_][_] with ψ'[num k .: num c .: num x .: (num y) ..] in Hk.
+    2: { rewrite subst_comp. apply subst_ext.
+      intros [|[|[|[|n]]]]; cbn; now rewrite ?num_subst. }
+    rewrite vl in Hk.
+    assert (Qeq ⊢ φ[num k .: num c .: num x .: (num y)..]) as Hk1.
+    { eapply CE1, Hk. }
+    assert (Qeq ⊢ (∀ (∀ $1 ⊕ $0 ⧀= (num y)`[↑]`[↑] ⊕ (num k)`[↑]`[↑] ~> φ[$0 .: (num c)`[↑]`[↑] .: (num x)`[↑]`[↑] .: $1..] ~> $1 == (num y)`[↑]`[↑]))) as Hk2.
+    { eapply CE2, Hk. }
+    clear Hk.
     fintros "[k' [Hk21 Hk22]]".
     assert (bounded_t 0 (num y ⊕ num k)) as Hbyk.
     { solve_bounds; apply num_bound. }
     pose proof (@Qsdec_le intu (num y ⊕ num k) (y' ⊕ k') Hbyk) as Hyk.
     eapply DE.
     { eapply Weak; first apply Hyk. auto. }
-    - (* instantiate here *) admit.
-    - (* instantiate Hk *)
-  Admitted.
+    - assert (Qeq ⊢ ax_sym) as Hsym by ctx.
+      unfold ax_sym in Hsym.
+      apply AllE with (t := num y) in Hsym. cbn in Hsym.
+      apply AllE with (t := y') in Hsym. cbn in Hsym.
+      rewrite subst_term_shift in Hsym.
+      eapply IE.
+      { eapply Weak; first apply Hsym. auto. }
+      eapply sdjkl with (t := (num y)).
+      { right. left. reflexivity. }
+      cbn.
+      eapply sdjkl with (t := (num k)).
+      { left. reflexivity. }
+      cbn. rewrite !pless_subst. cbn. rewrite !num_subst.
+      rewrite !up_term, !subst_term_shift.
+      eapply IE. 1: eapply IE.
+      1: { apply Ctx. left. reflexivity. }
+      + ctx.
+      + replace (φ[_][_][_][_][_]) with (φ[num k .: num c .: num x .: (num y) ..]).
+        * eapply Weak; first apply Hk1. auto 6. 
+        * rewrite !subst_comp. eapply bounded_subst; first eassumption.
+          intros [|[|[|[|n]]]] H; cbn; rewrite ?num_subst; lia + reflexivity.
+    - apply AllE with (t := y') in Hk2. cbn in Hk2.
+      apply AllE with (t := k') in Hk2.  cbn in Hk2.
+      rewrite !pless_subst in Hk2. cbn in Hk2. rewrite !num_subst, subst_term_shift in Hk2.
+      eapply IE. 1: eapply IE. 
+      1: { eapply Weak; first apply Hk2. auto. }
+      + ctx.
+      + apply Ctx. right. right. left. 
+        rewrite !subst_comp. eapply bounded_subst; first eassumption.
+        intros [|[|[|[|n]]]] Hn; cbn; rewrite ?num_subst; reflexivity + lia.
+  Qed.
 
   Lemma epf_n_uctq : uCTQ.
   Proof.
@@ -446,14 +502,16 @@ Section ctq.
     unfold embed', embed.
     rewrite <-adk. lia.
   Qed.
-  Lemma fsvml φ n : bounded n φ -> Σ1 φ -> exists ψ,
-    bounded (S n) ψ /\ Σ1 ψ /\ forall x y, Qeq ⊢ φ[(num (embed' (x, y)))..] <~> ψ[num x .: (num y)..].
+  Lemma fsvml φ n : bounded (S n) φ -> exists ρ,
+    bounded (S (S n)) (φ[ρ]) /\ forall x y, Qeq ⊢ φ[(num (embed' (x, y)))..] <~> φ[ρ][num x .: (num y)..].
   Proof. 
-    intros Hb HΣ.
-    exists (φ[($1 ⊗ (σ σ zero) ⊕ ($1 ⊕ $0) ⊗ ($1 ⊕ $0 ⊕ σ zero))..]).
-    split. { admit. }
-    split. { admit. }
-    (* TODO formula needs to be changed to avoid captures *)
+    intros Hb.
+    exists (($1 ⊗ (σ σ zero) ⊕ ($1 ⊕ $0) ⊗ ($1 ⊕ $0 ⊕ σ zero)).:(S >> S >> var)).
+    split. 
+    { eapply subst_bound; last eassumption.
+      intros [|k] H; cbn.
+      - repeat (constructor; lia + solve_bounds).
+      - unfold funcomp. constructor. lia. }
     intros x y.
     assert (Qeq ⊢ num (embed' (x, y)) == num y ⊗ (σ σ zero) ⊕ (num y ⊕ num x) ⊗ (num y ⊕ num x ⊕ σ zero)) as Heq.
     { apply Σ1_completeness with (ρ := fun _ => 0).
@@ -461,22 +519,105 @@ Section ctq.
       { repeat solve_bounds; apply num_bound. }
       cbn. rewrite !eval_num, !iμ_standard.
       apply embed'_expl. }
-    replace (φ[_][_]) with φ[(num y ⊗ σ (σ zero) ⊕ (num y ⊕ num x) ⊗ ((num y ⊕ num x) ⊕ σ zero))..].
+    replace (φ[_][_]) with φ[(num y ⊗ σ (σ zero) ⊕ (num y ⊕ num x) ⊗ (num y ⊕ num x ⊕ σ zero))..].
     2: { rewrite subst_comp. apply subst_ext.
-      intros [|[|[|k]]]; cbn.
-      solve_bounds.
-  Admitted.
+      intros [|k]; reflexivity. }
+    fsplit.
+    - fapply Q_leibniz. apply Heq.
+    - fapply Q_leibniz. fapply ax_sym. apply Heq.
+  Qed.
+  Lemma move1 φ x y :
+    φ[num x .: (num y) ..] = φ[(num x)..][(num y)..].
+  Proof.
+    rewrite subst_comp. apply subst_ext.
+    intros [|[|n]]; cbn; now rewrite ?num_subst.
+  Qed.
+  Lemma move2 φ x y z :
+    φ[num x .: num y .: (num z) ..] = φ[num x .: (num y)..][(num z)..].
+  Proof.
+    rewrite subst_comp. apply subst_ext.
+    intros [|[|[|n]]]; cbn; now rewrite ?num_subst.
+  Qed.
+
+  Lemma vasdj φ n : bounded (S n) φ -> exists ρ,
+    bounded (S (S (S n))) (φ[ρ]) /\ forall x y z, Qeq ⊢ φ[(num (embed' (embed' (x, y), z)))..] <~> φ[ρ][num x .: num y .: (num z)..].
+  Proof.
+    intros Hb.
+    destruct (fsvml Hb) as (ρ1 & Hb1 & Hρ1).
+    destruct (fsvml Hb1) as (ρ2 & Hb2 & Hρ2).
+    rewrite subst_comp in Hb2.
+    eexists. split.
+    { apply Hb2. }
+    intros x y z.
+    rewrite <-subst_comp.
+    fstart. fsplit.
+    - fintros "H".
+      rewrite move2.
+      specialize (Hρ2 x y). apply subst_Weak with (xi := (num z)..) in Hρ2.
+      change (map _ _) with Qeq in Hρ2.
+      fapply Hρ2. 
+      rewrite <-move1.
+      fapply Hρ1. ctx.
+    - fintros "H". fapply Hρ1. 
+      rewrite move1.
+      specialize (Hρ2 x y). apply subst_Weak with (xi := (num z)..) in Hρ2.
+      change (map _ _) with Qeq in Hρ2.
+      fapply Hρ2. rewrite <-move2. fapply "H".
+  Qed.
 
   Variable theta_mu_universal : is_universal theta_mu.
 
+  Lemma ck t x y :
+    embed' (x, y) = t -> unembed' t = (x, y).
+  Proof. 
+    intros <-. apply unembed'_embed'.
+  Qed.
+
+  Lemma theta_mu_enumerable : enumerable (fun t => let '(t', y) := unembed' t in let '(c, x) := unembed' t' in theta_mu c x ▷ y).
+  Proof.
+    apply semi_decidable_enumerable.
+    { now exists Some. }
+    unshelve eexists.
+    { intros [[c x]%unembed' y]%unembed' k.
+      destruct ((theta_mu c x).(core) k) as [y'|].
+      - exact (nat_eq_dec y y').
+      - exact false. }
+    intros t.
+    destruct (unembed' t) as [t' y] eqn:H1, (unembed' t') as [c x] eqn:H2.
+    split.
+    - intros [k Hk]. exists k. cbv zeta match beta.
+      rewrite H2. rewrite Hk. now apply Dec_reflect.
+    - intros [k Hk]. exists k.
+      cbv zeta match beta in Hk.
+      rewrite H2 in Hk.
+      destruct core.
+      + now apply Dec_reflect in Hk.
+      + discriminate.
+  Qed.
+
   Lemma epf_mu_ctq : uCTQ.
   Proof.
-    (* destruct (@Q_weak_repr theta_mu_universal (fun t => let '(c, t') := unembed t in let '(x, y) := unembed t' in theta_mu c x ▷ y)) as (φ & Hb & HΣ & Hφ). *)
-    (* { admit. } *)
-    assert (exists φ, Qdec φ /\ bounded 4 φ /\ forall c x y, theta_mu c x ▷ y <-> Qeq ⊢ ∃ φ[$0 .: num c .: num x .: (num y)..]) as (φ & HQ & Hb & Hφ) by admit.
-    eapply epf_n_uctq with (theta := theta_mu) (φ := φ).
+    destruct (@Q_weak_repr theta_mu_universal (fun t => let '(t', y) := unembed' t in let '(c, x) := unembed' t' in theta_mu c x ▷ y)) as (φ1 & Hb1 & HΣ1 & Hφ1); first apply theta_mu_enumerable.
+    assert (exists φ, Σ1 φ /\ bounded 3 φ /\ forall c x y, theta_mu c x ▷ y <-> Qeq ⊢ φ[num c .: num x .: (num y)..]) as (φ2 & HΣ2 & Hb2 & Hφ2).
+    { destruct (vasdj Hb1) as (ρ & Hb & Hρ). exists (φ1[ρ]).
+      split; first (apply Σ1_subst, HΣ1).
+      split; first assumption.
+      intros c x y. 
+      specialize (Hφ1 (embed' (embed' (c, x), y))). rewrite !unembed'_embed' in Hφ1.
+      setoid_rewrite Hφ1.
+      split; intros H; fapply Hρ; apply H. }
+    assert (exists φ, Qdec φ /\ bounded 4 φ /\ forall c x y, theta_mu c x ▷ y <-> Qeq ⊢ ∃ φ[$0 .: num c .: num x .: (num y)..]) as (φ3 & HQ3 & Hb3 & Hφ3).
+    { destruct (Σ1_compression Hb2 HΣ2) as (φ & HQ & Hb & Hφ). 
+      exists φ. do 2 (split; first assumption).
+      intros c x y. rewrite Hφ2.
+      apply subst_Weak with (xi := num c .: num x .: (num y)..) in Hφ.
+      change (map _ _) with Qeq in Hφ. cbn in Hφ.
+      replace (φ[$0 .: _]) with (φ[up (num c .: num x .: (num y)..)]).
+      { split; intros H; fapply Hφ; apply H. }
+      eapply bounded_subst; first eassumption.
+      intros [|[|[|[|n]]]] H; cbn; lia + now rewrite ?num_subst. }
+    eapply epf_n_uctq with (theta := theta_mu) (φ := φ3).
     all: assumption.
-  Admitted.
+  Qed.
 
 End ctq.
-
