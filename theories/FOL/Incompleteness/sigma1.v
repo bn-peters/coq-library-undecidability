@@ -201,8 +201,21 @@ Section Sigma1.
     destruct (@exists_compression ψ n k) as (ψ' & HΔ' & Hb' & H').
     all: firstorder using bounded_exist_times.
   Qed.
-
 End Sigma1.
+
+
+Section conservativity.
+  Existing Instance PA_preds_signature.
+  Existing Instance PA_funcs_signature.
+
+  Context {p : peirce}.
+
+  Lemma Σ1_conservativity ϕ :
+    Σ1 ϕ -> bounded 0 ϕ -> Qeq ⊢C ϕ -> Qeq ⊢I ϕ.
+  Proof. Admitted.
+
+End conservativity.
+
 Section Sigma1completeness.
   Existing Instance PA_preds_signature.
   Existing Instance PA_funcs_signature.
