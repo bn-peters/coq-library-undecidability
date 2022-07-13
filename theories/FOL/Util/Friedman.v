@@ -432,7 +432,7 @@ Section Arithmetic.
 End Arithmetic.
 
 
-Lemma std_Q_consistent :
+Lemma std_Q_consistent' :
   ~ list_theory Qeq ⊢TC ⊥.
 Proof.
   apply std_T_consistent.
@@ -446,4 +446,9 @@ Proof.
   all: cbn -[FAeq]; try refine (fun A => let F := A _ rho in _); intuition.
   - destruct d; eauto.
   - destruct Qa.
+Qed.
+Lemma std_Q_consistent :
+  ~ Qeq ⊢C ⊥.
+Proof.
+  intros H. apply std_Q_consistent'. exists Qeq. split; auto.
 Qed.

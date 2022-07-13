@@ -3,7 +3,7 @@ From Undecidability.FOL.Incompleteness Require Import utils.
 From Undecidability.Synthetic Require Import DecidabilityFacts EnumerabilityFacts ReducibilityFacts.
 From Undecidability.Shared Require Import Dec embed_nat.
 
-From Undecidability.FOL.Util Require Import Syntax_facts FullDeduction FullDeduction_facts FullTarski FullTarski_facts Axiomatisations FA_facts Syntax.
+From Undecidability.FOL.Util Require Import Syntax_facts FullDeduction FullDeduction_facts FullTarski FullTarski_facts Axiomatisations FA_facts Syntax Friedman.
 From Undecidability.FOL Require Import PA.
 
 From Equations Require Import Equations.
@@ -204,17 +204,6 @@ Section Sigma1.
 End Sigma1.
 
 
-Section conservativity.
-  Existing Instance PA_preds_signature.
-  Existing Instance PA_funcs_signature.
-
-  Context {p : peirce}.
-
-  Lemma Σ1_conservativity ϕ :
-    Σ1 ϕ -> bounded 0 ϕ -> Qeq ⊢C ϕ -> Qeq ⊢I ϕ.
-  Proof. Admitted.
-
-End conservativity.
 
 Section Sigma1completeness.
   Existing Instance PA_preds_signature.
@@ -223,14 +212,14 @@ Section Sigma1completeness.
   Existing Instance intu.
 
   (** # <a id="Sigma1_completeness" /> #*)
-  Theorem Σ1_completeness φ ρ : Σ1 φ -> bounded 0 φ -> interp_nat; ρ ⊨ φ -> Qeq ⊢ φ.
+  Theorem Σ1_completeness_intu φ : Σ1 φ -> bounded 0 φ -> interp_nat ⊨= φ -> Qeq ⊢ φ.
   Proof.
     enough (forall ρ, Σ1 φ -> bounded 0 φ[ρ] -> interp_nat ⊨= φ[ρ] -> Qeq ⊢ φ[ρ]).
     { intros HΣ Hb Hsat. rewrite <-subst_var. apply H.
       - easy.
       - now rewrite subst_var.
-      - intros ρ'. rewrite subst_var. eapply sat_closed; eassumption. }
-    clear ρ. intros ρ. induction 1 as [φ H IH|φ H] in ρ |-*.
+      - intros ρ'. rewrite subst_var. apply Hsat. }
+    intros ρ. induction 1 as [φ H IH|φ H] in ρ |-*.
     - cbn. invert_bounds.
       intros Hnat. destruct (Hnat (fun _ => 0)) as [d Hd].
       remember intu as Hintu. (* for proof mode *)
@@ -249,23 +238,110 @@ Section Sigma1completeness.
       { intros _. solve_bounds. }
       + rewrite bounded_0_subst in H1; assumption.
       + (* note: actually only requires consistency, can also be shown for classical *)
-        eapply Q_sound_intu with (rho := fun _ => 0) in H1. cbn in H1.
-        exfalso. apply H1.  rewrite bounded_0_subst; auto.
+        eapply soundness in H1. cbn in H1. unfold valid_ctx in H1. 
+        specialize (H1 _ interp_nat (fun _ => 0) (nat_is_Q_model _)).
+        cbn in H1. destruct H1. rewrite bounded_0_subst; auto.
+  Qed.
+
+
+  (*(** # <a id="Sigma1_witness" /> #*)*)
+  (*Theorem Σ1_witness_intu φ : Σ1 φ -> bounded 1 φ -> Qeq ⊢ ∃φ -> exists x, Qeq ⊢ φ[(num x)..].*)
+  (*Proof.*)
+  (*  intros Hb HΣ Hφ. eapply Σ1_soundness with (rho := fun _ => 0) in Hφ as [x Hx].*)
+  (*  exists x. eapply Σ1_completeness with (ρ := fun _ => 0).*)
+  (*  - now apply Σ1_subst.*)
+  (*  - eapply subst_bound; last eassumption.*)
+  (*    intros [|n] H; last lia. apply num_bound.*)
+  (*  - eapply sat_closed; first last.*)
+  (*    + rewrite <-sat_single_nat. apply Hx.*)
+  (*    + eapply subst_bound; last eassumption.*)
+  (*      intros [|n] H; last lia. apply num_bound.*)
+  (*Qed.*)
+
+End Sigma1completeness.
+
+Section conservativity.
+  Existing Instance PA_preds_signature.
+  Existing Instance PA_funcs_signature.
+
+  Context {pei : peirce}.
+
+  Lemma Σ1_conservativity ϕ :
+    @Σ1 class ϕ -> bounded 0 ϕ -> Qeq ⊢C ϕ -> Qeq ⊢I ϕ.
+  Proof. Admitted.
+
+  Lemma Σ1_soundness ϕ :
+    Σ1 ϕ -> bounded 0 ϕ -> Qeq ⊢ ϕ -> interp_nat ⊨= ϕ.
+  Proof.
+    Set Printing Implicit.
+    intros HΣ Hb Hϕ. intros ρ. 
+    destruct pei; eapply soundness. 
+    - apply Σ1_conservativity; assumption.
+    - apply nat_is_Q_model.
+    - apply Hϕ.
+    - apply nat_is_Q_model.
+  Qed.
+
+End conservativity.
+
+Section Sigma1completeness.
+  Existing Instance PA_preds_signature.
+  Existing Instance PA_funcs_signature.
+
+  Context `{pei : peirce}.
+
+  (** # <a id="Sigma1_completeness" /> #*)
+  Theorem Σ1_completeness φ : Σ1 φ -> bounded 0 φ -> interp_nat ⊨= φ -> Qeq ⊢ φ.
+  Proof.
+    destruct pei; last apply Σ1_completeness_intu.
+    enough (forall ρ, @Σ1 class φ -> bounded 0 φ[ρ] -> interp_nat ⊨= φ[ρ] -> Qeq ⊢C φ[ρ]).
+    { intros HΣ Hb Hsat. rewrite <-subst_var. apply H.
+      - easy.
+      - now rewrite subst_var.
+      - intros ρ'. rewrite subst_var. apply Hsat. }
+    intros ρ. induction 1 as [φ H IH|φ H] in ρ |-*.
+    - cbn. invert_bounds.
+      intros Hnat. destruct (Hnat (fun _ => 0)) as [d Hd].
+      remember intu as Hintu. (* for proof mode *)
+      fexists (num d). rewrite subst_comp. apply IH.
+      + rewrite <-subst_comp. eapply subst_bound; last apply H4.
+        intros [|n] Hn; last lia. apply num_bound.
+      + intros ρ'. rewrite <-subst_comp.
+        rewrite sat_single_nat in Hd.
+        eapply sat_closed; last apply Hd.
+        eapply subst_bound; last apply H4. 
+        intros [|n] Hn; last lia. apply num_bound.
+    - intros Hb Hnat.
+      assert (@Qdec class φ[ρ]) as H'.
+      { apply Qdec_subst, H. }
+      destruct (H' (fun _ => zero)) as [H1|H1].
+      { intros _. solve_bounds. }
+      all: rewrite bounded_0_subst in H1; try eassumption.
+      contradict Hnat.
+      apply Σ1_soundness with (rho := fun _ => 0) in H1.
+      + cbn in H1. contradict H1. apply H1.
+      + constructor. apply Qdec_impl.
+        * assumption.
+        * apply Qdec_bot.
+      + now solve_bounds.
   Qed.
 
 
   (** # <a id="Sigma1_witness" /> #*)
   Theorem Σ1_witness φ : Σ1 φ -> bounded 1 φ -> Qeq ⊢ ∃φ -> exists x, Qeq ⊢ φ[(num x)..].
   Proof.
-    intros Hb HΣ Hφ. eapply Q_sound_intu with (rho := fun _ => 0) in Hφ as [x Hx].
-    exists x. eapply Σ1_completeness with (ρ := fun _ => 0).
+    intros Hb HΣ Hφ. eapply Σ1_soundness with (rho := fun _ => 0) in Hφ as [x Hx].
+    exists x. eapply Σ1_completeness.
     - now apply Σ1_subst.
     - eapply subst_bound; last eassumption.
       intros [|n] H; last lia. apply num_bound.
-    - eapply sat_closed; first last.
-      + rewrite <-sat_single_nat. apply Hx.
-      + eapply subst_bound; last eassumption.
-        intros [|n] H; last lia. apply num_bound.
+    - intros ρ. rewrite sat_single_nat in Hx. 
+      eapply sat_closed; last eassumption.
+      eapply subst_bound; last eassumption.
+      intros [|n] H; lia + apply num_bound.
+    - now constructor.
+    - now constructor.
   Qed.
 
 End Sigma1completeness.
+

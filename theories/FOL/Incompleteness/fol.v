@@ -85,22 +85,6 @@ Section lemmas.
   Qed.
 
 
-
-  Lemma Q_sound_class φ : (forall P, P \/ ~P) -> Qeq ⊢C φ -> interp_nat ⊨= φ.
-  Proof.
-    intros LEM H ρ. eapply soundness_class.
-    - assumption.
-    - eassumption.
-    - apply nat_is_Q_model.
-  Qed.
-
-  Lemma Q_sound_intu φ : Qeq ⊢I φ -> interp_nat ⊨= φ.
-  Proof.
-    intros H ρ. eapply soundness.
-    - eassumption.
-    - apply nat_is_Q_model. 
-  Qed.
-
   Lemma prv_intu_class T φ p : @prv _ _ _ intu T φ -> @prv _ _ _ p T φ.
   Proof.
     remember intu as p' eqn:H.
