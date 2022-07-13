@@ -59,7 +59,7 @@ Section Sigma1.
   Qed.
 
 
-  Lemma exists_compression_2 φ n : Qdec φ -> bounded (S (S n)) φ -> exists ψ, Qdec ψ /\ bounded (S n) ψ /\ Qeq ⊢ (∃∃φ) <~> (∃ψ).
+  Lemma exists_compression_2 φ n : Qdec φ -> bounded (S (S n)) φ -> exists ψ, Qdec ψ /\ bounded (S n) ψ /\ Qeq ⊢I (∃∃φ) <~> (∃ψ).
   Proof.
     intros HQ Hb.
     exists (∃ ($0 ⧀= $1) ∧ ∃ ($0 ⧀=comm $2) ∧ φ[up (up (S >> var))]).
@@ -132,7 +132,7 @@ Section Sigma1.
       apply subst_ext. now intros [|[|[|k]]].
   Qed.
 
-  Lemma exists_equiv φ ψ : Qeq ⊢ φ ~> ψ -> (∃φ :: Qeq) ⊢ (∃ψ).
+  Lemma exists_equiv φ ψ : Qeq ⊢I φ ~> ψ -> (∃φ :: Qeq) ⊢I (∃ψ).
   Proof.
     intros H. eapply ExE.
     { apply Ctx. now left. }
@@ -145,7 +145,7 @@ Section Sigma1.
   Qed.
 
   Lemma exists_compression φ k n : bounded (n + k) φ -> Qdec φ ->
-    exists ψ, Qdec ψ /\ bounded (S k) ψ /\ Qeq ⊢ exist_times n φ <~> ∃ ψ.
+    exists ψ, Qdec ψ /\ bounded (S k) ψ /\ Qeq ⊢I exist_times n φ <~> ∃ ψ.
   Proof.
     intros Hb HQ. revert Hb. induction n as [|n IH] in k |-*.
     2: destruct n. all: cbn.
@@ -195,7 +195,7 @@ Section Sigma1.
   Qed.
 
   (** # <a id="Sigma1_compression" /> #*)
-  Lemma Σ1_compression φ n : bounded n φ -> Σ1 φ -> exists ψ, Qdec ψ /\ bounded (S n) ψ /\ Qeq ⊢ φ <~> ∃ψ.
+  Lemma Σ1_compression φ n : bounded n φ -> Σ1 φ -> exists ψ, Qdec ψ /\ bounded (S n) ψ /\ Qeq ⊢I φ <~> ∃ψ.
   Proof.
     intros Hb (k & ψ & HΔ & ->)%Σ1_exist_times.
     destruct (@exists_compression ψ n k) as (ψ' & HΔ' & Hb' & H').
@@ -267,7 +267,7 @@ Section conservativity.
   Context {pei : peirce}.
 
   Lemma Σ1_conservativity ϕ :
-    @Σ1 class ϕ -> bounded 0 ϕ -> Qeq ⊢C ϕ -> Qeq ⊢I ϕ.
+    Σ1 ϕ -> bounded 0 ϕ -> Qeq ⊢C ϕ -> Qeq ⊢I ϕ.
   Proof. Admitted.
 
   Lemma Σ1_soundness ϕ :
@@ -275,8 +275,11 @@ Section conservativity.
   Proof.
     Set Printing Implicit.
     intros HΣ Hb Hϕ. intros ρ. 
-    destruct pei; eapply soundness. 
-    - apply Σ1_conservativity; assumption.
+    destruct pei eqn:H; eapply soundness. 
+    - apply Σ1_conservativity.
+      * congruence.
+      * assumption.
+      * assumption.
     - apply nat_is_Q_model.
     - apply Hϕ.
     - apply nat_is_Q_model.
