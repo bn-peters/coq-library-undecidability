@@ -124,7 +124,7 @@ Section value_disjoint.
     Lemma φ1'_qdec : Qdec φ1'.
     Proof.
       apply Qdec_and; first assumption.
-      apply (@Qdec_bounded_forall _ $1).
+      apply (@Qdec_bounded_forall $1).
       apply Qdec_impl.
       - apply Qdec_subst, φ2_qdec.
       - apply Qdec_bot.
@@ -133,7 +133,7 @@ Section value_disjoint.
     Lemma φ2'_qdec : Qdec φ2'.
     Proof.
       apply Qdec_and; first assumption.
-      apply (@Qdec_bounded_forall _ $1).
+      apply (@Qdec_bounded_forall $1).
       apply Qdec_impl.
       - apply Qdec_subst, φ1_qdec.
       - apply Qdec_bot.
@@ -268,7 +268,7 @@ Section value_disjoint.
       (forall x, P1 x -> Qeq ⊢ φ[(num x)..]) /\
       (forall x, P2 x -> Qeq ⊢ ¬φ[(num x)..]).
     Proof.
-      destruct (@Σ1_compression _ φ1 1) as (ψ1 & HQ1 & Hb1 & Hψ1), (@Σ1_compression _ φ2 1) as (ψ2 & HQ2 & Hb2 & Hψ2).
+      destruct (@Σ1_compression φ1 1) as (ψ1 & HQ1 & Hb1 & Hψ1), (@Σ1_compression φ2 1) as (ψ2 & HQ2 & Hb2 & Hψ2).
       all: try assumption.
       apply weak_strong' with (φ1 := ψ1[$1.:$0..]) (φ2 := ψ2[$1.:$0..]).
       { eapply subst_bound; last eassumption. intros [|[|n]]; solve_bounds. }

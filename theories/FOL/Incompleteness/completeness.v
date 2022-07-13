@@ -184,7 +184,7 @@ Section completeness.
   Lemma Qdec_absoluteness M1 M2 (I1 : interp M1) (I2 : interp M2) (QM1 : I1 ⊨=L Qeq) (Mext1 : extensional I1) (QM2 : I2 ⊨=L Qeq) (Mext2 : extensional I2) ρ1 ρ2 φ :
     bounded 0 φ -> Qdec φ -> I1; ρ1 ⊨ φ -> I2; ρ2 ⊨ φ.
   Proof.
-    intros Hb HQ H1. destruct (HQ (fun _ => zero)) as [H|H].
+    intros Hb HQ H1. destruct (HQ class (fun _ => zero)) as [H|H].
     { solve_bounds. }
     all: rewrite completeness in H.
     - rewrite bounded_0_subst in H; auto.

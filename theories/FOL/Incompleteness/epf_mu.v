@@ -252,7 +252,7 @@ Section fol.
     Hypothesis Penum : enumerable P. 
     Lemma Q_weak_repr : exists φ, bounded 1 φ /\ Σ1 φ /\ forall x, P x <-> Qeq ⊢ φ[(num x)..].
     Proof.
-      destruct mu_recursive_definable with (P := P) (peirc := pei) as (φ & Hb & HΣ & Hr).
+      destruct mu_recursive_definable with (P := P) as (φ & Hb & HΣ & Hr).
       { now apply mu_semi_decidable_enumerable. }
       exists φ. do 2 (split; first assumption).
       intros x. erewrite Hr. instantiate (1 := fun _ => 0). split.
