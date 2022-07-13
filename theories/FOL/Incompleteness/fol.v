@@ -165,6 +165,24 @@ Section lemmas.
     - apply Ht, H2.
   Qed.
 
+
+
+  Lemma bounded_t_0 t ρ :
+    bounded_t 0 t -> t`[ρ] = t.
+  Proof.
+    intros Hb. rewrite <-subst_term_var.
+    eapply bounded_subst_t; last eassumption.
+    lia.
+  Qed.
+  Lemma subst_up2 φ t ρ : bounded_t 0 t -> φ[t..][ρ] = φ[up ρ][t..].
+  Proof.
+    intros Hb. rewrite !subst_comp. apply subst_ext.
+    intros [|n]; cbn; unfold "↑";cbn.
+    - now apply bounded_t_0. 
+    - rewrite !subst_term_comp. rewrite <-subst_term_var at 1.
+      apply subst_term_ext. intros [|n']; reflexivity.
+  Qed.
+
 End lemmas.
 
 

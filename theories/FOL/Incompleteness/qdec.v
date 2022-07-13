@@ -40,25 +40,26 @@ Section Qdec.
 
   Lemma Qdec_subst φ ρ : Qdec φ -> Qdec φ[ρ].
   Proof.
-    intros H ρ' Hb. rewrite subst_comp. apply H.
+    intros H pei ρ' Hb. rewrite subst_comp. apply H.
     intros k. apply subst_t_closed, Hb.
   Qed.
 
-  Lemma Qdec_iff φ ψ : Qeq ⊢ φ <~> ψ -> Qdec φ -> Qdec ψ.
+  Lemma Qdec_iff φ ψ : Qeq ⊢I φ <~> ψ -> Qdec φ -> Qdec ψ.
   Proof.
-    intros H Hφ ρ Hρ. 
+    intros H Hφ pei ρ Hρ. apply prv_intu_class with (p := pei) in H.
     pose proof (subst_Weak ρ H) as Hiff. cbn in Hiff. change (List.map _ _) with Qeq in Hiff.
-    destruct (Hφ ρ Hρ) as [H1|H1].
+    destruct (Hφ pei ρ Hρ) as [H1|H1].
     - left. fapply Hiff. fapply H1.
     - right. fintros. fapply H1. fapply Hiff. ctx.
   Qed.
   (* TODO use this lemma for qdec proofs below! *)
   Lemma Qdec_iff' φ ψ : 
-    (forall ρ, (forall k, bounded_t 0 (ρ k)) -> Qeq ⊢ φ[ρ] <~> ψ[ρ]) -> 
+    (forall ρ, (forall k, bounded_t 0 (ρ k)) -> Qeq ⊢I φ[ρ] <~> ψ[ρ]) -> 
     Qdec φ -> Qdec ψ.
   Proof.
-    intros H Hφ ρ Hρ.
-    specialize (H _ Hρ). destruct (Hφ _ Hρ) as [H1|H1].
+    intros H Hφ pei ρ Hρ. 
+    specialize (H _ Hρ). apply prv_intu_class with (p := pei) in H.
+    destruct (Hφ _ _ Hρ) as [H1|H1].
     - left. fapply H. fapply H1.
     - right. fintros. fapply H1. fapply H. ctx.
   Qed.
