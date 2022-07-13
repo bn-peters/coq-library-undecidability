@@ -611,7 +611,7 @@ Section Qdec.
   Theorem Qdec_bounded_exists t φ :
     Qdec φ -> Qdec (∃ ($0 ⧀= t`[↑]) ∧ φ).
   Proof.
-    intros H ρ Hρ.
+    intros H pei ρ Hρ.
     destruct (@closed_term_is_num _ t`[ρ]) as [x Hx].
     { destruct (find_bounded_t t) as [k Hk].
       eapply subst_bound_t; last eassumption. auto. }
@@ -646,7 +646,7 @@ Section Qdec.
   Theorem Qdec_bounded_exists_comm t φ :
     Qdec φ -> Qdec (∃ ($0 ⧀=comm t`[↑]) ∧ φ).
   Proof.
-    intros H ρ Hρ.
+    intros H pei ρ Hρ.
     destruct (@closed_term_is_num _ t`[ρ]) as [x Hx].
     { destruct (find_bounded_t t) as [k Hk].
       eapply subst_bound_t; last eassumption. auto. }

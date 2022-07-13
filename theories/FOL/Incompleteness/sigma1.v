@@ -264,11 +264,11 @@ Section conservativity.
   Existing Instance PA_preds_signature.
   Existing Instance PA_funcs_signature.
 
-  Context {pei : peirce}.
-
   Lemma Σ1_conservativity ϕ :
     Σ1 ϕ -> bounded 0 ϕ -> Qeq ⊢C ϕ -> Qeq ⊢I ϕ.
   Proof. Admitted.
+
+  Context {pei : peirce}.
 
   Lemma Σ1_soundness ϕ :
     Σ1 ϕ -> bounded 0 ϕ -> Qeq ⊢ ϕ -> interp_nat ⊨= ϕ.
