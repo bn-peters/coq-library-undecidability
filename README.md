@@ -36,7 +36,7 @@ opam install . --deps-only
 
 - navigate to the `theories` directory
 - `make all` builds the whole library and might take >30min
-- `make 'FOL/Incompleteness/*.vo'` compiles all files necessary to assess the incompleteness results in <15min
+- `make FOL/Incompleteness/fol_incompleteness.vo` compiles all files necessary to assess the incompleteness results in <15min
 - `make html` generates clickable coqdoc `.html` in the `website` subdirectory
 - `make clean` removes all build files in `theories` and `.html` files in the `website` directory
 
@@ -45,7 +45,7 @@ opam install . --deps-only
 The library is compatible with Coq's compiled interfaces ([`vos`](https://coq.inria.fr/refman/practical-tools/coq-commands.html#compiled-interfaces-produced-using-vos)) for quick infrastructural access.
 
 - `make vos` builds compiled interfaces for the library
-- `make 'FOL/Incompleteness/*.vos'` builds compiled interfaces for the incompleteness results
+- `make FOL/Incompleteness/fol_incompleteness.vos` builds compiled interfaces for the incompleteness results
 - `make vok` checks correctness of the library 
 
 ### Troubleshooting
