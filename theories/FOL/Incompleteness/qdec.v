@@ -154,6 +154,26 @@ Section Qdec.
   Section lemmas.
     Context `{pei : peirce}.
 
+    Lemma Qsdec_le x y : bounded_t 0 x -> Qeq ⊢ ((x ⧀= y) ∨ (y ⧀= x)).
+    Proof.
+      intros Hx. destruct (closed_term_is_num Hx) as [k Hk].
+      rewrite !pless_eq. frewrite Hk. clear Hk.
+      induction k as [|k IH] in y |-*; fstart.
+      - fleft. fexists y. frewrite (ax_add_zero y). fapply ax_refl.
+      - fassert (ax_cases); first ctx.
+        fdestruct ("H" y) as "[H|[y' H]]".
+        + fright. fexists (σ (num k)). 
+          frewrite "H". frewrite (ax_add_zero (σ num k)).
+          fapply ax_refl.
+        + specialize (IH y'). 
+          fdestruct IH.
+          * fleft. 
+            fdestruct "H0". fexists x0. frewrite "H". frewrite "H0".
+            fapply ax_sym. fapply ax_add_rec.
+          * fright. custom_simpl.
+            fdestruct "H0". fexists x0. frewrite "H". frewrite "H0".
+            fapply ax_sym. fapply ax_add_rec.
+    Qed.
     Lemma Q_eqdec t x : Qeq ⊢ x == (num t) ∨ ¬(x == num t).
     Proof. 
       induction t in x |-*; fstart; fintros.

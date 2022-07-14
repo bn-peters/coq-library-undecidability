@@ -4,7 +4,7 @@ From Undecidability.Shared Require Import Dec embed_nat.
 From Undecidability.FOL.Util Require Import Syntax_facts FullDeduction FullDeduction_facts FullTarski FullTarski_facts Axiomatisations FA_facts Syntax.
 From Undecidability.FOL Require Import PA.
 From Undecidability.FOL.Proofmode Require Import Theories ProofMode Hoas.
-From Undecidability.FOL.Incompleteness Require Import formal_systems abstract_incompleteness fol qdec sigma1 weak_strong bin_qdec utils epf epf_mu.
+From Undecidability.FOL.Incompleteness Require Import formal_systems abstract_incompleteness fol qdec sigma1 bin_qdec utils epf epf_mu.
 
 From Undecidability.H10 Require Import DPRM dio_single.
 
@@ -584,6 +584,10 @@ Section ctq.
       intros [|[|[|[|n]]]] H; cbn; lia + now rewrite ?num_subst. }
     eapply epf_n_uctq with (theta := theta_mu) (φ := φ3).
     all: assumption.
+  Qed.
+  Lemma epf_mu_ctq : CTQ.
+  Proof.
+    apply uctq_ctq, epf_mu_uctq.
   Qed.
 
 End ctq.

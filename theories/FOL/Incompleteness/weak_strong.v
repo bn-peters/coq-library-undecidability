@@ -7,39 +7,9 @@ From Undecidability.FOL.Proofmode Require Import Theories ProofMode Hoas.
 From Undecidability.FOL.Incompleteness Require Import formal_systems fol qdec sigma1.
 
 
-(** * Weak representability implies strong separability using Rosser's trick *)
-
 From Equations Require Import Equations DepElim.
 Require Import String List.
 Open Scope string_scope.
-Section Qtrichotomy.
-  Existing Instance PA_funcs_signature.
-  Existing Instance PA_preds_signature.
-
-  (* Cannot be concrete here due to bug in Proofmode *)
-  Variable (p : peirce).
-
-  Lemma Qsdec_le x y : bounded_t 0 x -> Qeq ⊢ ((x ⧀= y) ∨ (y ⧀= x)).
-  Proof.
-    intros Hx. destruct (closed_term_is_num Hx) as [k Hk].
-    rewrite !pless_eq. frewrite Hk. clear Hk.
-    induction k as [|k IH] in y |-*; fstart.
-    - fleft. fexists y. frewrite (ax_add_zero y). fapply ax_refl.
-    - fassert (ax_cases); first ctx.
-      fdestruct ("H" y) as "[H|[y' H]]".
-      + fright. fexists (σ (num k)). 
-        frewrite "H". frewrite (ax_add_zero (σ num k)).
-        fapply ax_refl.
-      + specialize (IH y'). 
-        fdestruct IH.
-        * fleft. 
-          fdestruct "H0". fexists x0. frewrite "H". frewrite "H0".
-          fapply ax_sym. fapply ax_add_rec.
-        * fright. custom_simpl.
-          fdestruct "H0". fexists x0. frewrite "H". frewrite "H0".
-          fapply ax_sym. fapply ax_add_rec.
-  Qed.
-End Qtrichotomy.
 
 
 Section value_disjoint.
@@ -205,7 +175,7 @@ Section value_disjoint.
       custom_simpl. unfold "↑". fstart.
       fintros "H". fdestruct "H". fdestruct "H".
 
-      pose proof (Qsdec_le pei x0 (num_bound k 0)). 
+      pose proof (Qsdec_le x0 (num_bound k 0)). 
       fdestruct H.
       - fapply ("H0" (num k)).
         + rewrite pless_subst. simpl_subst. ctx.

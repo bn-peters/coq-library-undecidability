@@ -9,8 +9,6 @@ From Undecidability.FOL.Incompleteness Require Import fol qdec.
 
 From Equations Require Import Equations DepElim.
 
-(** ** Illustrative proof of Rosser's trick using completeness *)
-
 
 Notation "x 'i⧀=' y"  := (exists k, y = x i⊕ k) (at level 42) : PA_Notation.
 

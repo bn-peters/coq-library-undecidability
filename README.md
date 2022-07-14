@@ -1,11 +1,11 @@
 # Gödel's Theorem Without Tears 
 ### Essential Incompleteness in Synthetic Computability
 
-This repository contains the Coq code accompanying [Benjamin Peters'](https://www.ps.uni-saarland.de/~peters/) and [Dominik Kirst's](https://www.ps.uni-saarland.de/~kirst/) [TYPES 2022](https://types22.inria.fr/) talk ([abstract](abstract.pdf), [slides](slides.pdf) (WIP, preliminary version)) as part of a fork of the [Coq library of undecidability proofs](https://github.com/uds-psl/coq-library-undecidability).
+This repository contains the Coq code accompanying [Dominik Kirst's](https://www.ps.uni-saarland.de/~kirst/) and [Benjamin Peters'](https://www.ps.uni-saarland.de/~peters/) [CSL 2023](https://csl2023.mimuw.edu.pl) submission ([here](TODO)) as part of a fork of the [Coq library of undecidability proofs](https://github.com/uds-psl/coq-library-undecidability).
 
-The documentation can found [here](https://www.ps.uni-saarland.de/~peters/bachelor/documentation/toc.html).
+The documentation can found [here](https://www.ps.uni-saarland.de/extras/incompleteness/website/toc.html).
 
-The development can be found at [`theories/FOL/Incompleteness/`](https://github.com/uds-psl/coq-synthetic-incompleteness/tree/bachelor/theories/FOL/Incompleteness) and comprises the following files:
+The development can be found at [`theories/FOL/Incompleteness/`](https://github.com/uds-psl/coq-synthetic-incompleteness/tree/csl/theories/FOL/Incompleteness) and comprises the following files:
 - `utils.v`: Utilities for vectors and a definition of partial functions
 - `epf.v`: Definition of Church's thesis and undecidability/uncomputability results
 - `dprm.v`: Church's thesis for mu-recursive functions
@@ -13,11 +13,10 @@ The development can be found at [`theories/FOL/Incompleteness/`](https://github.
 - `formal_systems.v`: Abstract formal systems
 - `abstract_incompleteness.v`: Incompleteness of abstract formal systems
 - `fol.v`: Utilities for first-order logic and [first-order proofmode](https://github.com/mark-koch/firstorder-proof-mode) integration 
-- `qdec.v`: Q-decidability and Σ1-completeness
-- `weak_strong.v`: Rosser's trick to show that weak representability implies strong separability in Robinson arithmetic
-    - `completeness.v`: Illustrative proof of strong separability using completeness
+- `qdec.v`: Q-decidability
+- `sigma1.v`: Σ1-completeness
+- `ctq.v`: Church's thesis for Q and related results
 - `fol_incompleteness.v`: Essential incompleteness of Robinson arithmetic
-
 
 
 ## Installation Instructions
@@ -37,7 +36,7 @@ opam install . --deps-only
 
 - navigate to the `theories` directory
 - `make all` builds the whole library and might take >30min
-- `make FOL/Incompleteness/fol_incompleteness.vo FOL/Incompleteness/completeness.vo` compiles all files necessary to assess the incompleteness results in <15min
+- `make 'FOL/Incompleteness/*.vo'` compiles all files necessary to assess the incompleteness results in <15min
 - `make html` generates clickable coqdoc `.html` in the `website` subdirectory
 - `make clean` removes all build files in `theories` and `.html` files in the `website` directory
 
@@ -46,7 +45,7 @@ opam install . --deps-only
 The library is compatible with Coq's compiled interfaces ([`vos`](https://coq.inria.fr/refman/practical-tools/coq-commands.html#compiled-interfaces-produced-using-vos)) for quick infrastructural access.
 
 - `make vos` builds compiled interfaces for the library
-- `make FOL/Incompleteness/fol_incompleteness.vos FOL/Incompleteness/completeness.vos` builds compiled interfaces for the incompleteness results
+- `make 'FOL/Incompleteness/*.vos'` builds compiled interfaces for the incompleteness results
 - `make vok` checks correctness of the library 
 
 ### Troubleshooting
