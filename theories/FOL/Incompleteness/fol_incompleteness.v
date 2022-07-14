@@ -4,7 +4,7 @@ From Undecidability.Shared Require Import Dec embed_nat.
 From Undecidability.FOL.Util Require Import Syntax_facts FullDeduction FullDeduction_facts FullTarski FullTarski_facts Axiomatisations FA_facts Syntax.
 From Undecidability.FOL Require Import PA.
 From Undecidability.FOL.Proofmode Require Import Theories ProofMode Hoas.
-From Undecidability.FOL.Incompleteness Require Import formal_systems abstract_incompleteness fol sigma1 weak_strong utils epf epf_mu ctq.
+From Undecidability.FOL.Incompleteness Require Import formal_systems abstract_incompleteness fol sigma1 utils epf epf_mu ctq.
 
 From Undecidability.H10 Require Import DPRM dio_single.
 
@@ -92,10 +92,10 @@ Section fol.
 
   (* Q is essentially incomplete and essentially undecidable *)
   Section Q_incomplete.
-    Hypothesis mu_universal : is_universal theta_mu.
+    (* Hypothesis mu_universal : is_universal theta_mu. *)
 
     Hypothesis (p : peirce).
-    Existing Instance intu.
+    Hypothesis ctq : @CTQ p.
 
     Variable T : theory.
     Hypothesis T_Q : list_theory Qeq ⊑ T.
@@ -104,8 +104,6 @@ Section fol.
 
     Theorem Q_undecidable : ~decidable (@tprv _ _ _ p T).
     Proof.
-      assert CTQ as ctq.
-      { apply uctq_ctq, epf_mu_uctq, mu_universal. }
       assert (exists theta : nat -> nat -\ bool, is_universal theta) as [theta theta_universal].
       { apply epf_nat_bool, ctq_epfn, ctq. }
       assert (forall c, theta c c ▷ true -> theta c c ▷ false -> False) as Hdisj.
@@ -116,16 +114,12 @@ Section fol.
       eapply (@fol_undecidable_strong_repr p theta theta_universal T Tenum Tconsis (list_theory Qeq) T_Q (list_theory_enumerable Qeq)).
       instantiate (1 := fun c => ψ[(num c)..]).
       split; intros c H.
-      - exists Qeq. split; first auto.
-        now apply prv_intu_class.
-      - exists Qeq. split; first auto.
-        now apply prv_intu_class.
+      - exists Qeq. eauto.
+      - exists Qeq. eauto.
     Qed.
 
     Theorem Q_incomplete : exists φ, bounded 0 φ /\ Σ1 φ /\ ~@tprv _ _ _ p T φ /\ ~@tprv _ _ _ p T (¬φ).
     Proof. 
-      assert CTQ as ctq.
-      { apply uctq_ctq, epf_mu_uctq, mu_universal. }
       assert (exists theta : nat -> nat -\ bool, is_universal theta) as [theta theta_universal].
       { apply epf_nat_bool, ctq_epfn, ctq. }
       assert (forall c, theta c c ▷ true -> theta c c ▷ false -> False) as Hdisj.
@@ -136,10 +130,8 @@ Section fol.
       edestruct (@fol_incomplete_strong_repr p theta theta_universal T Tenum Tconsis (list_theory Qeq) T_Q (list_theory_enumerable Qeq)).
       { instantiate (1 := fun c => ψ[(num c)..]).
         split; intros c H.
-        - exists Qeq. split; first auto.
-          now apply prv_intu_class.
-        - exists Qeq. split; first auto.
-          now apply prv_intu_class. }
+        - exists Qeq. eauto.
+        - exists Qeq. eauto. }
       cbn in H. exists ψ[(num x)..]. 
       repeat apply conj.
       - eapply subst_bound; last eassumption. intros [|n] Hn; last lia. apply num_bound.
