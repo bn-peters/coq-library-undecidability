@@ -1,4 +1,4 @@
-From Undecidability.FOL.Incompleteness Require Import utils.
+From Undecidability.FOL.Incompleteness Require Import utils fol qdec.
 From Undecidability.Synthetic Require Import DecidabilityFacts EnumerabilityFacts ReducibilityFacts.
 From Undecidability.Shared Require Import Dec embed_nat.
 
@@ -7,7 +7,6 @@ From Undecidability.FOL Require Import PA.
 
 From Equations Require Import Equations.
 From Undecidability.FOL.Proofmode Require Import Theories ProofMode Hoas.
-From Undecidability.FOL.Incompleteness Require Import fol qdec.
 
 
 Require Import Setoid.
@@ -260,12 +259,48 @@ Section Sigma1completeness.
 End Sigma1completeness.
 
 Section conservativity.
+
   Existing Instance PA_preds_signature.
   Existing Instance PA_funcs_signature.
 
   Lemma Σ1_conservativity ϕ :
     Σ1 ϕ -> bounded 0 ϕ -> Qeq ⊢C ϕ -> Qeq ⊢I ϕ.
-  Proof. Admitted.
+  Proof. 
+    intros S1 Hcl Htc.
+    destruct (Σ1_compression Hcl S1) as [α (dec_α & b1_α & Hα)].
+    assert (bounded 0 (∃ α)) as b0_α by (now solve_bounds).
+    eapply IE with (∃ α).
+    1: eapply CE2; apply Hα.
+    apply Σ1_completeness_intu; auto.
+    1: do 2 constructor; auto.
+    assert (Qeq ⊢C ∃ α) as H.
+    { eapply IE with ϕ; auto.
+      apply prv_intu_class. 
+      eapply CE1. apply Hα. }
+    apply Fr_cl_to_min, soundness in H.
+    refine (let H' := H nat (extend_interp interp_nat _) (fun _ => 0) _ in _).
+    cbn in H'; apply H'. clear H H'.
+    intros [n Hn].
+    destruct (dec_α intu (fun _ => num n)) as [H|H].
+    - intro. apply num_bound.
+    - exists n. apply soundness in H.
+      eapply sat_single_nat. 
+      erewrite bounded_subst.
+      + apply H, nat_is_Q_model.
+      + eauto.
+      + intros []; [reflexivity|lia].
+    - apply prv_intu_class with (p:=class) in H.
+      apply Fr_cl_to_min, soundness in H.
+      refine (let H' := H nat (extend_interp interp_nat _) (fun _ => 0) _ in _).
+      cbn in H'. apply H'; clear H H'.
+      rewrite <-subst_Fr. apply sat_comp.
+      eapply FullTarski_facts.bound_ext with (N:=1).
+      3 : apply Hn.
+      { now apply bounded_Fr. }
+      intros []; [intros _;cbn|lia].
+      apply nat_eval_num.
+      Unshelve. all: apply nat_sat_Fr_Q.
+  Qed.
 
   Context {pei : peirce}.
 
@@ -346,4 +381,3 @@ Section Sigma1completeness.
   Qed.
 
 End Sigma1completeness.
-

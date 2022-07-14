@@ -236,7 +236,16 @@ Section Signature.
   Qed.
 
   
+  Section bounded.
+
+    Lemma bounded_Fr {ff : falsity_flag} N ϕ :
+      bounded N ϕ -> bounded N (Fr ϕ).
+    Proof.
+    Admitted.
+    
+  End bounded.
 End Signature.
+
 
 
 
@@ -364,6 +373,15 @@ Section Arithmetic.
     apply H10p_undec.
   Qed.
   
+  Lemma nat_sat_Fr_Q P :
+    (extend_interp interp_nat P) ⊫= Fr_ Qeq.
+  Proof.
+    intros ρ a Qa.
+    repeat (destruct Qa as [<-|Qa]).
+    all: cbn -[FAeq]; try refine (fun A => let F := A _ rho in _); intuition.
+    - destruct d; eauto.
+    - destruct Qa.
+  Qed.
   
   Definition Fr_pres T :=
     forall D (I : interp D) P, 

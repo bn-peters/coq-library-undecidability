@@ -4,7 +4,7 @@ Require Import Undecidability.FOL.Util.Syntax_facts.
 Require Export Undecidability.FOL.Util.FullTarski.
 From Undecidability Require Import Shared.ListAutomation.
 Import ListAutomationNotations.
-Require Import Vector.
+Require Import Vector Lia.
 
 Local Set Implicit Arguments.
 Local Unset Strict Implicit.
@@ -121,6 +121,49 @@ Section Tarski.
   End Substs.
 
 End Tarski.
+
+
+  (** Results for bounded formulas. *)
+  
+Section bounded.
+  Context {Σ_funcs : funcs_signature}.
+  Context {Σ_preds : preds_signature}.
+
+  Variable D : Type.
+  Variable I : interp D.
+
+  Lemma bounded_eval_t n t sigma tau :
+    (forall k, k < n -> sigma k = tau k) -> bounded_t n t -> eval sigma t = eval tau t.
+  Proof.
+    intros H. induction 1; cbn; auto.
+    f_equal. now apply Vector.map_ext_in.
+  Qed.
+
+  Lemma bound_ext {ff : falsity_flag} N phi rho sigma :
+    bounded N phi -> (forall n, n < N -> rho n = sigma n) -> (rho ⊨ phi <-> sigma ⊨ phi).
+  Proof.
+    induction 1 in sigma, rho |- *; cbn; intros HN; try tauto.
+    - enough (map (eval rho) v = map (eval sigma) v) as E. now setoid_rewrite E.
+      apply Vector.map_ext_in. intros t Ht.
+      eapply bounded_eval_t; try apply HN. now apply H.
+    - destruct binop; now rewrite (IHbounded1 rho sigma), (IHbounded2 rho sigma).
+    - destruct quantop.
+      + split; intros Hd d; eapply IHbounded.
+        all : try apply (Hd d); intros [] Hk; cbn; auto.
+        symmetry. all: apply HN; lia.
+      + split; intros [d Hd]; exists d; eapply IHbounded.
+        all : try apply Hd; intros [] Hk; cbn; auto.
+        symmetry. all: apply HN; lia.
+  Qed.
+
+  Corollary sat_closed {ff : falsity_flag} rho sigma phi :
+    bounded 0 phi -> rho ⊨ phi <-> sigma ⊨ phi.
+  Proof.
+    intros H. eapply bound_ext. apply H. lia.
+  Qed.
+End bounded.
+
+
 
 
 
