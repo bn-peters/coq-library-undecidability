@@ -11,15 +11,29 @@ Section abstract.
 
   (** ** Folklore proof using soundness *)
 
-  (* Any weakly representable predicate is decidable *)
-  Lemma weakly_representable_decidable (p : nat -> Prop) :
-    decidable (fs.(fprv)) -> 
-    (exists r, weakly_represents fs p r) ->
+  (* Any weakly representable predicate is in a decidable formal system is decidable *)
+  Lemma weakly_representable_decidable' (fs' : FS S neg) (p : nat -> Prop) :
+    extension fs fs' ->
+    decidable (fs'.(fprv)) -> 
+    (exists r, weakly_represents fs p r /\ sound fs' p r) ->
     decidable p.
   Proof.
-    intros Hdec [r Hr].
-    eapply ReducibilityFacts.dec_red; last eassumption.
-    now exists r. 
+    intros Hext [dec Hdec] [r [Hr1 Hr2]].
+    exists (fun n => dec (r n)).
+    intros x. unfold reflects.
+    split.
+    - intros H. apply Hdec, Hext, Hr1, H.
+    - intros H. apply Hr2, Hdec, H.
+  Qed.
+  (* Any weakly representable predicate in a complete formal system is decidable *)
+  Lemma weakly_representable_decidable (fs' : FS S neg) (p : nat -> Prop) :
+    extension fs fs' ->
+    complete fs' ->
+    (exists r, weakly_represents fs p r /\ sound fs' p r) ->
+    decidable p.
+  Proof.
+    intros H1 H2%complete_decidable H3. 
+    eapply weakly_representable_decidable'; eassumption.
   Qed.
 
   (* Any formal system weakly representing the halting problem is undecidable and therefore incomplete *)
@@ -30,7 +44,7 @@ Section abstract.
     Lemma halt_undecidability : ~decidable fs.(fprv).
     Proof.
       intros Hdec. eapply self_halting_undec; first eassumption.
-      apply weakly_representable_decidable; eauto.
+      apply weakly_representable_decidable' with (fs' := fs); firstorder.
     Qed.
 
     Lemma halt_incompleteness' : ~complete fs.
@@ -44,13 +58,16 @@ Section abstract.
   Section halt.
     Variable (r : nat -> S).
     Hypothesis Hrepr : weakly_represents fs (self_halting theta) r.
+    Variable (fs' : FS S neg).
+    Hypothesis (Hext : extension fs fs').
+    Hypothesis (snd : sound fs' (self_halting theta) r).
 
-    Lemma halt_incompleteness : exists n, independent fs (r n).
+    Lemma halt_incompleteness : exists n, independent fs' (r n).
     Proof.
-      destruct (is_provable fs) as (f & Hf1 & Hf2). 
+      destruct (is_provable fs') as (f & Hf1 & Hf2). 
       assert (exists c, forall b, ~f (r c) ▷ b) as [d Hd].
       { eapply self_halting_diverge; try eassumption.
-        intros c. rewrite <-Hf1. symmetry. apply Hrepr. }
+        intros c. rewrite <-Hf1. firstorder. }
       exists d. split; firstorder.
     Qed.
 

@@ -1,4 +1,3 @@
-(* TODO deduplicate imports *)
 From Undecidability.FOL.Incompleteness Require Import utils.
 From Undecidability.Synthetic Require Import DecidabilityFacts EnumerabilityFacts ReducibilityFacts.
 From Undecidability.Shared Require Import Dec embed_nat.

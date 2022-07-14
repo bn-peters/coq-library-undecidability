@@ -35,8 +35,10 @@ Section facts.
   Definition independent s := fs ⊬F s /\ fs ⊬F neg s.
 
   (* Representability properties *)
-  Definition weakly_represents (fprv : nat -> Prop) (r : nat -> S) :=
-    forall x, fprv x <-> fs ⊢F r x.
+  Definition weakly_represents (P : nat -> Prop) (r : nat -> S) :=
+    forall x, P x <-> fs ⊢F r x.
+  Definition sound (P : nat -> Prop) (r : nat -> S) :=
+    forall x, fs ⊢F r x -> P x.
   Definition strongly_separates (P1 P2 : nat -> Prop) (r : nat -> S) :=
     (forall x, P1 x -> fs ⊢F r x) /\
     (forall x, P2 x -> fs ⊢F neg (r x)).
