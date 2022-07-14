@@ -1,5 +1,5 @@
 (* TODO deduplicate imports *)
-From Undecidability.FOL.Incompleteness Require Import utils.
+From Undecidability.FOL.Incompleteness Require Import utils fol.
 From Undecidability.Synthetic Require Import DecidabilityFacts EnumerabilityFacts ReducibilityFacts.
 From Undecidability.Shared Require Import Dec embed_nat.
 
@@ -59,7 +59,7 @@ Section Sigma1.
   Qed.
 
 
-  Lemma exists_compression_2 φ n : Qdec φ -> bounded (S (S n)) φ -> exists ψ, Qdec ψ /\ bounded (S n) ψ /\ Qeq ⊢ (∃∃φ) <~> (∃ψ).
+  Lemma exists_compression_2 φ n : Qdec φ -> bounded (S (S n)) φ -> exists ψ, Qdec ψ /\ bounded (S n) ψ /\ Qeq ⊢I (∃∃φ) <~> (∃ψ).
   Proof.
     intros HQ Hb.
     exists (∃ ($0 ⧀= $1) ∧ ∃ ($0 ⧀=comm $2) ∧ φ[up (up (S >> var))]).
@@ -132,7 +132,7 @@ Section Sigma1.
       apply subst_ext. now intros [|[|[|k]]].
   Qed.
 
-  Lemma exists_equiv φ ψ : Qeq ⊢ φ ~> ψ -> (∃φ :: Qeq) ⊢ (∃ψ).
+  Lemma exists_equiv φ ψ : Qeq ⊢I φ ~> ψ -> (∃φ :: Qeq) ⊢I (∃ψ).
   Proof.
     intros H. eapply ExE.
     { apply Ctx. now left. }
@@ -145,7 +145,7 @@ Section Sigma1.
   Qed.
 
   Lemma exists_compression φ k n : bounded (n + k) φ -> Qdec φ ->
-    exists ψ, Qdec ψ /\ bounded (S k) ψ /\ Qeq ⊢ exist_times n φ <~> ∃ ψ.
+    exists ψ, Qdec ψ /\ bounded (S k) ψ /\ Qeq ⊢I exist_times n φ <~> ∃ ψ.
   Proof.
     intros Hb HQ. revert Hb. induction n as [|n IH] in k |-*.
     2: destruct n. all: cbn.
@@ -195,8 +195,7 @@ Section Sigma1.
   Qed.
 
   (** # <a id="Sigma1_compression" /> #*)
-  Lemma Σ1_compression φ n : 
-    bounded n φ -> Σ1 φ -> exists ψ, Qdec ψ /\ bounded (S n) ψ /\ Qeq ⊢ φ <~> ∃ψ.
+  Lemma Σ1_compression φ n : bounded n φ -> Σ1 φ -> exists ψ, Qdec ψ /\ bounded (S n) ψ /\ Qeq ⊢I φ <~> ∃ψ.
   Proof.
     intros Hb (k & ψ & HΔ & ->)%Σ1_exist_times.
     destruct (@exists_compression ψ n k) as (ψ' & HΔ' & Hb' & H').
@@ -262,34 +261,48 @@ Section Sigma1completeness.
 End Sigma1completeness.
 
 Section conservativity.
+
   Existing Instance PA_preds_signature.
   Existing Instance PA_funcs_signature.
 
   Lemma Σ1_conservativity ϕ :
-    Σ1 ϕ -> bounded 0 ϕ -> Qeq ⊢C ϕ -> Qeq ⊢ ϕ.
-  Proof.
+    Σ1 ϕ -> bounded 0 ϕ -> Qeq ⊢C ϕ -> Qeq ⊢I ϕ.
+  Proof. 
     intros S1 Hcl Htc.
     destruct (Σ1_compression Hcl S1) as [α (dec_α & b1_α & Hα)].
-    apply Σ1_completeness_intu; auto.
+    assert (bounded 0 (∃ α)) as b0_α by (now solve_bounds).
     eapply IE with (∃ α).
-    { admit. }
-    do 2 constructor. apply dec_α. }
-    assert (Qeq ⊢C ∃ α).
-    eapply IE with ϕ; auto.
-    { admit. }
+    1: eapply CE2; apply Hα.
+    apply Σ1_completeness_intu; auto.
+    1: do 2 constructor; auto.
+    assert (Qeq ⊢C ∃ α) as H.
+    { eapply IE with ϕ; auto.
+      apply prv_intu_class. 
+      eapply CE1. apply Hα. }
     apply Fr_cl_to_min, soundness in H.
     refine (let H' := H nat (extend_interp interp_nat _) (fun _ => 0) _ in _).
-    simpl in H'. apply H'.
+    cbn in H'; apply H'. clear H H'.
     intros [n Hn].
-    destruct (dec_α (fun _ => num n)) as [h|h].
-    - admit.
-    - exists n. apply soundness in h. admit.
-    - clear H H'.
-      enough (Qeq ⊢C ¬ α[fun _ : nat => num n]) as H%Fr_cl_to_min%soundness.
+    destruct (dec_α intu (fun _ => num n)) as [H|H].
+    - intro. apply num_bound.
+    - exists n. apply soundness in H.
+      eapply sat_single_nat. 
+      erewrite bounded_subst.
+      + apply H, nat_is_Q_model.
+      + eauto.
+      + intros []; [reflexivity|lia].
+    - apply prv_intu_class with (p:=class) in H.
+      apply Fr_cl_to_min, soundness in H.
       refine (let H' := H nat (extend_interp interp_nat _) (fun _ => 0) _ in _).
-      simpl in H'. apply H'.
-      admit.
-  Admitted.
+      cbn in H'. apply H'; clear H H'.
+      rewrite <-subst_Fr. apply sat_comp.
+      eapply FullTarski_facts.bound_ext with (N:=1).
+      3 : apply Hn.
+      { now apply bounded_Fr. }
+      intros []; [intros _;cbn|lia].
+      apply nat_eval_num.
+      Unshelve. all: apply nat_sat_Fr_Q.
+  Qed.
 
   Context {pei : peirce}.
 
@@ -298,8 +311,11 @@ Section conservativity.
   Proof.
     Set Printing Implicit.
     intros HΣ Hb Hϕ. intros ρ. 
-    destruct pei; eapply soundness. 
-    - apply Σ1_conservativity; assumption.
+    destruct pei eqn:H; eapply soundness. 
+    - apply Σ1_conservativity.
+      * congruence.
+      * assumption.
+      * assumption.
     - apply nat_is_Q_model.
     - apply Hϕ.
     - apply nat_is_Q_model.
@@ -367,4 +383,3 @@ Section Sigma1completeness.
   Qed.
 
 End Sigma1completeness.
-
