@@ -87,7 +87,6 @@ Section Signature.
     - reflexivity.
     - cbn. now rewrite IHL, subst_Fr.
   Qed.
-      
 
   Lemma double_dn Gamma F phi :
     Gamma ⊢M dn F (dn F phi) ~> dn F phi.
@@ -114,7 +113,7 @@ Section Signature.
     change ((up (fun x : nat => $(S x)) n)) with ($n`[up ↑]).
     rewrite subst_term_comp.
     apply subst_term_id. now intros [].
-  Qed.                             
+  Qed.
   
   Lemma dn_forall {F} Gamma phi :
     F[↑] = F -> Gamma ⊢M dn F (∀ phi) ~> ∀ dn F phi.
@@ -235,14 +234,16 @@ Section Signature.
     - apply Peirce_Fr.
   Qed.
 
-  
+
   Section bounded.
 
     Lemma bounded_Fr {ff : falsity_flag} N ϕ :
       bounded N ϕ -> bounded N (Fr ϕ).
     Proof.
-    Admitted.
-    
+      induction 1; cbn; solve_bounds; auto.
+      - destruct binop; now solve_bounds.
+      - destruct quantop; now solve_bounds.
+    Qed.
   End bounded.
 End Signature.
 
