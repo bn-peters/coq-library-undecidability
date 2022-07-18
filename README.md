@@ -1,7 +1,7 @@
 # Gödel's Theorem Without Tears 
 ### Essential Incompleteness in Synthetic Computability
 
-This repository contains the Coq code accompanying [Dominik Kirst's](https://www.ps.uni-saarland.de/~kirst/) and [Benjamin Peters'](https://www.ps.uni-saarland.de/~peters/) [CSL 2023](https://csl2023.mimuw.edu.pl) submission ([here](TODO)) as part of a fork of the [Coq library of undecidability proofs](https://github.com/uds-psl/coq-library-undecidability).
+This repository contains the Coq code accompanying [Dominik Kirst's](https://www.ps.uni-saarland.de/~kirst/) and [Benjamin Peters'](https://www.ps.uni-saarland.de/~peters/) [CSL 2023](https://csl2023.mimuw.edu.pl) submission ([here](https://www.ps.uni-saarland.de/extras/incompleteness/paper.pdf)) as part of a fork of the [Coq library of undecidability proofs](https://github.com/uds-psl/coq-library-undecidability).
 
 The documentation can found [here](https://www.ps.uni-saarland.de/extras/incompleteness/website/toc.html).
 
